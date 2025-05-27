@@ -1,0 +1,62 @@
+areNeighborCells -> index::is_neighbor_of
+cellAreaKm2 -> cell::item::area_km2
+cellAreaM2 -> cell::item::area_m2
+cellAreaRads2 -> cell::item::area_rads2
+cellsToDirectedEdge -> direct_edge::ctor
+cellsToMultiPolygon -> cells_to_multi_polygon
+cellToBoundary -> cell::item::boundary
+cellToCenterChild -> cell::item::center_child
+cellToChildPos -> cell::item::child_position
+cellToChildren -> cell::item::children
+cellToChildrenSize ->
+cellToLatLng -> cell::item::center
+cellToLocalIj -> cell::item::local_ijk
+cellToParent -> cell::item::parent
+childPosToCell -> cell::item::child
+compactCells -> ?
+degsToRads -> degree::to_radian
+directedEdgeToBoundary -> directed_edge::boundary
+directedEdgeToCells -> direct_edge::to_cells
+edgeLengthKm -> edge::unidirectional::length_km
+edgeLengthM -> edge::unidirectional::length_m
+edgeLengthRads -> edge::unidirectional::length_rads
+getBaseCellNumber -> index::base_cell_number
+getDirectedEdgeDestination -> direct_edge::destination
+getDirectedEdgeOrigin -> direct_edge::origin
+getHexagonAreaAvgKm2 -> hexagon::area_average_km2
+getHexagonAreaAvgM2 -> hexagon::area_average_m2
+getHexagonEdgeLengthAvgKm -> hexagon::average_edge_length_km
+getHexagonEdgeLengthAvgM -> hexagon::average_edge_length_m
+getIcosahedronFaces -> icosahedron::faces
+getNumCells ->
+getPentagons ->
+getRes0Cells ->
+getResolution -> index::resolution
+greatCircleDistanceKm -> great_circle::distance_km
+greatCircleDistanceM -> great_circle::distance_m
+greatCircleDistanceRads -> great_circle::distance_rads
+gridDisk -> index::grid_disk
+gridDiskDistances* -> index::grid_disk_distances*
+gridDistance -> cell::item::grid_distance
+gridPathCells -> cell::item::path_to
+gridPathCellsSize ->
+gridRingUnsafe -> index::grid_ring_unsafe
+h3ToString -> index::to_string
+isPentagon -> index::mode?
+isResClassIII -> index::has_resolution_class3
+isValidCell -> cell:is_valid
+isValidVertex -> index::is_valid
+latLngToCell -> cell::item::ctor
+localIjToCell -> cell::item::ctor
+maxFaceCount -> icosahedron::max_face_count
+maxGridDiskSize -> grid::disk::max_size
+maxPolygonToCellsSize -> ?
+originToDirectedEdges -> direct_edge::of
+pentagonCount -> ?
+polygonToCells -> polygon_to_cells
+radsToDegs -> radian::to_degree
+res0CellCount ->
+stringToH3 -> index::ctor
+uncompactCells -> ?
+uncompactCellsSize -> ?
+vertexToLatLng -> vertex::to_wgs84
