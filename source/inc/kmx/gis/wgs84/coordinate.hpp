@@ -12,6 +12,7 @@ namespace kmx::gis::wgs84
         using span = int;
 
         constexpr coordinate(const double lat = {}, const double lon = {}): latitude {lat}, longitude {lon} {}
+        constexpr coordinate(const double data[2u]): latitude {data[0u]}, longitude {data[1u]} {}
         constexpr coordinate(const coordinate&) = default;
         constexpr coordinate(coordinate&&) = default;
 

@@ -1,30 +1,36 @@
 import qbs
 
 StaticLibrary {
-    name: "h3"
+    name: "geohex"
     Depends {
         name: "cpp"
     }
     files: [
-        "api/kmx/h3/base.hpp",
-        "api/kmx/h3/cell.hpp",
-        "api/kmx/h3/cell/area.hpp",
-        "api/kmx/h3/cell/base.hpp",
-        "api/kmx/h3/cell/pentagon.hpp",
-        "api/kmx/h3/coordinate/ij.hpp",
-        "api/kmx/h3/coordinate/ijk.hpp",
-        "api/kmx/h3/icosahedron.hpp",
-        "api/kmx/h3/index.hpp",
+        "api/kmx/geohex/base.hpp",
+        "api/kmx/geohex/cell.hpp",
+        "api/kmx/geohex/cell/area.hpp",
+        "api/kmx/geohex/cell/base.hpp",
+        "api/kmx/geohex/cell/boundary.hpp",
+        "api/kmx/geohex/cell/pentagon.hpp",
+        "api/kmx/geohex/coordinate/ij.hpp",
+        "api/kmx/geohex/coordinate/ijk.hpp",
+        "api/kmx/geohex/geo_projection.hpp",
+        "api/kmx/geohex/icosahedron/face.hpp",
+        "api/kmx/geohex/index.hpp",
+        "api/kmx/geohex/index_hash.hpp",
         "inc/kmx/math/vector.hpp",
         "inc/kmx/unsafe_ipow.hpp",
         "inc/kmx/gis/wgs84/coordinate.hpp",
-        "src/kmx/h3/cell.cpp",
-        "src/kmx/h3/cell/area.cpp",
-        "src/kmx/h3/cell/base.cpp",
-        "src/kmx/h3/cell/pentagon.cpp",
-        "src/kmx/h3/coordinate/ijk.cpp",
-        "src/kmx/h3/icosahedron.cpp",
-        "src/kmx/h3/index.cpp",
+        "src/kmx/geohex/base.cpp",
+        "src/kmx/geohex/cell.cpp",
+        "src/kmx/geohex/cell/area.cpp",
+        "src/kmx/geohex/cell/base.cpp",
+        "src/kmx/geohex/cell/boundary.cpp",
+        "src/kmx/geohex/cell/pentagon.cpp",
+        "src/kmx/geohex/coordinate/ijk.cpp",
+        "src/kmx/geohex/geo_projection.cpp",
+        "src/kmx/geohex/icosahedron/face.cpp",
+        "src/kmx/geohex/index.cpp",
     ]
     cpp.cxxLanguageVersion: "c++23"
     //cpp.cxxFlags: "-gdwarf-4"
