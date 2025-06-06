@@ -1,9 +1,9 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch_all.hpp>
-#include <kmx/h3/cell/base.hpp>
-#include <kmx/h3/index.hpp>
+#include <kmx/geohex/cell/base.hpp>
+#include <kmx/geohex/index.hpp>
 
-namespace kmx::h3
+namespace kmx::geohex
 {
     TEST_CASE("index - mode")
     {

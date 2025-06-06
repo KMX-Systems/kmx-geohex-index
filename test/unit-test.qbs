@@ -3,7 +3,7 @@ import qbs
 CppApplication {
     Depends
     {
-        name: 'h3'
+        name: 'geohex'
     }
     consoleApplication: true
     cpp.debugInformation: true

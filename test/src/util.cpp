@@ -1,8 +1,8 @@
-/// @file h3/util.cpp
+/// @file geohex/util.cpp
 #include <catch2/catch_all.hpp>
-#include <kmx/h3/util.hpp>
+#include <kmx/geohex/util.hpp>
 
-namespace kmx::h3
+namespace kmx::geohex
 {
     TEST_CASE("utils - radian to degree conversion")
     {

@@ -1,9 +1,9 @@
-/// @file h3/index.cpp
-#include "kmx/h3/index.hpp"
-#include "kmx/h3/cell/pentagon.hpp"
+/// @file geohex/index.cpp
+#include "kmx/geohex/index.hpp"
+#include "kmx/geohex/cell/pentagon.hpp"
 #include <algorithm>
 
-namespace kmx::h3
+namespace kmx::geohex
 {
     index::index(const value_t item) noexcept
     {

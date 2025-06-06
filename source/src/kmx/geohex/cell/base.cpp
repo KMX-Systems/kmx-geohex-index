@@ -1,8 +1,8 @@
-/// @file h3/cell/base.cpp
-#include "kmx/h3/cell/base.hpp"
+/// @file geohex/cell/base.cpp
+#include "kmx/geohex/cell/base.hpp"
 #include <unordered_map>
 
-namespace kmx::h3::cell::base
+namespace kmx::geohex::cell::base
 {
     using index_array_array_t = std::array<base_id_array_t, count>;
 
@@ -143,9 +143,7 @@ namespace kmx::h3::cell::base
             const auto direction = static_cast<direction_t>(i);
             const auto index = neighbor_of(origin, direction);
             if (index == neightbor)
-            {
                 return direction;
-            }
         }
 
         return direction_t::invalid;

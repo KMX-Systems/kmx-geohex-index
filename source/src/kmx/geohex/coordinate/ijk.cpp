@@ -1,8 +1,9 @@
-/// @file h3/coordinate/ijk.cpp
-#include "kmx/h3/coordinate/ijk.hpp"
+/// @file geohex/coordinate/ijk.cpp
+#include "kmx/geohex/coordinate/ijk.hpp"
+#include "kmx/geohex/cell.hpp"
 #include <algorithm>
 #include <cassert>
-#include <cmath>
+#include <limits>
 
 #if defined(H3_OMIT_AUXILIARY_SAFETY_CHECKS)
     #define ALWAYS(X) (1)
@@ -15,43 +16,18 @@
     #define NEVER(X)  (X)
 #endif
 
-namespace kmx::h3::coordinate
+namespace kmx::geohex::coordinate
 {
-    static constexpr auto int32_max_div_3 = INT32_MAX / 3;
-
-    template <typename _Float = double, typename _Int = int>
-    constexpr void cube_round(const _Float i, const _Float j, const _Float k, _Int& i_out, _Int& j_out, _Int& k_out) noexcept
-    {
-        _Int ri = std::round(i);
-        _Int rj = std::round(j);
-        _Int rk = std::round(k);
-
-        const auto i_diff = std::fabs(static_cast<_Float>(ri) - i);
-        const auto j_diff = std::fabs(static_cast<_Float>(rj) - j);
-        const auto k_diff = std::fabs(static_cast<_Float>(rk) - k);
-
-        if ((i_diff > j_diff) && (i_diff > k_diff)) // round, maintaining valid cube coords.
-            ri = -rj - rk;
-        else if (j_diff > k_diff)
-            rj = -ri - rk;
-        else
-            rk = -ri - rj;
-
-        i_out = ri;
-        j_out = rj;
-        k_out = rk;
-    }
-
-    constexpr double M_SQRT3_2 = 0.0;
+    static constexpr auto int32_max_div_3 = std::numeric_limits<std::int32_t>::max() / 3;
 
     constexpr bool add_int32s_overflows(auto a, auto b) noexcept
     {
-        return a > 0 ? (INT32_MAX - a) < b : (INT32_MIN - a) > b;
+        return a > 0 ? (std::numeric_limits<std::int32_t>::max() - a) < b : (std::numeric_limits<std::int32_t>::min() - a) > b;
     }
 
     constexpr bool sub_int32s_overflows(auto a, auto b) noexcept
     {
-        return a >= 0 ? (INT32_MIN + a) >= b : (INT32_MAX + a + 1) < b;
+        return a >= 0 ? (std::numeric_limits<std::int32_t>::min() + a) >= b : (std::numeric_limits<std::int32_t>::max() + a + 1) < b;
     }
 
     ijk ijk::from_cube_round(const double i, const double j, const double k)
@@ -76,7 +52,7 @@ namespace kmx::h3::coordinate
     vector2 ijk::center() const noexcept
     {
         const auto v = j - k;
-        return {(i - k) - 0.5 * v, v * M_SQRT3_2};
+        return {(i - k) - 0.5 * v, v * sqrt3_2};
     }
 
     ijk ijk::operator+(const ijk& item) const noexcept
