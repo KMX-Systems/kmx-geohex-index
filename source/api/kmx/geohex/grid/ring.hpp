@@ -1,9 +1,10 @@
+/// @file geohex/grid/ring.hpp
 #pragma once
 #ifndef PCH
-    #include <h3plus/index.hpp>
+    #include <kmx/geohex/index.hpp>
 #endif
 
-namespace h3plus::grid::ring
+namespace kmx::geohex::grid::ring
 {
     index::vector unsafe(const index& index, const k_distance k);
     void unsafe(const index& index, const k_distance k, index::vector& items);

@@ -17,7 +17,8 @@ namespace kmx::geohex::cell::pentagon
 
     constexpr const std::array<std::uint8_t, count>& indexes() noexcept
     {
-        static constexpr std::array<std::uint8_t, count> items {4u, 14u, 24u, 38u, 49u, 58u, 63u, 72u, 83u, 97u, 107u, 117u};
+        static constexpr std::array<std::uint8_t, count> items //
+            {4u, 14u, 24u, 38u, 49u, 58u, 63u, 72u, 83u, 97u, 107u, 117u};
         return items;
     }
 
@@ -34,17 +35,19 @@ namespace kmx::geohex::cell::pentagon
             return bits;
         }();
 
-        return item < count ? data[item] : false;
+        return item < base::count ? data[item] : false;
     }
 
     /// @ref getPentagons
     void get(const resolution_t resolution, std::span<index, count> out) noexcept;
 
     /// @ref cellToChildrenSize
-    constexpr children_count_t children_count(const resolution_t children_resolution) noexcept
+    constexpr std::uint64_t children_count(const resolution_t children_resolution) noexcept
     {
-        const auto resolution_diff = +children_resolution - resolution_count;
-        return basic_children_count(unsafe_ipow<children_count_t>(base_children_count, resolution_diff));
+        // The parent is implicitly resolution 0.
+        const auto resolution_diff = +children_resolution; // This is (child_res - 0)
+        const auto result = unsafe_ipow<std::uint64_t>(base_children_count, resolution_diff);
+        return basic_children_count(result);
     }
 
     /// @ref _faceIjkPentNormalize (H3 C internal)
@@ -55,6 +58,12 @@ namespace kmx::geohex::cell::pentagon
 
     /// @brief Helper to get the local index (0-11) of a pentagon base cell.
     /// @param global_bc_id The global base cell ID (0-121).
-    /// @return The local pentagon index (0-11), or -1 if not a pentagon.
-    int get_local_pentagon_index(cell::base::id_t global_bc_id) noexcept;
+    /// @return The local pentagon index (0-11), or empty optional.
+    std::optional<std::uint8_t> get_index(const base::id_t global_bc_id) noexcept;
+
+    using clockwise_offset_t = std::int8_t;
+    using counter_clockwise_offset_t = std::int8_t;
+    using clockwise_offsets_t = std::pair<clockwise_offset_t, clockwise_offset_t>;
+
+    clockwise_offsets_t clockwise_offsets(const id_t base_cell_id) noexcept;
 }

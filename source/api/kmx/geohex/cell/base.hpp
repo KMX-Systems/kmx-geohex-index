@@ -42,9 +42,30 @@ namespace kmx::geohex::cell::base
     /// @ref baseCellNeighbor60CCWRots
     const rotations_60ccw_per_direction_array& rotations_60ccw(const id_t base_cell_id);
 
-    using clockwise_offset_t = std::int8_t;
-    using counter_clockwise_offset_t = std::int8_t;
-    using clockwise_offsets_t = std::pair<clockwise_offset_t, clockwise_offset_t>;
-
-    clockwise_offsets_t clockwise_offsets(const id_t base_cell_id) noexcept;
+    /// @brief Gets the canonical counter-clockwise rotation of a base cell relative to its face.
+    /// @ref baseCellData
+    /// @param base_cell_id The ID of the base cell.
+    /// @return 1 if the base cell is rotated, 0 otherwise.
+    constexpr std::int8_t get_canonical_orientation(const id_t base_cell_id) noexcept
+    {
+        switch (base_cell_id)
+        {
+            case 8u:
+            case 17u:
+            case 26u:
+            case 35u:
+            case 43u:
+            case 52u:
+            case 62u:
+            case 70u:
+            case 79u:
+            case 88u:
+            case 97u:
+            case 106u:
+            case 115u:
+                return 1u;
+            default:
+                return 0u;
+        }
+    }
 }

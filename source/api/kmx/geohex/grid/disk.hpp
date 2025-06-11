@@ -1,9 +1,10 @@
+/// @file geohex/grid/disk.hpp
 #pragma once
 #ifndef PCH
-    #include <h3plus/index.hpp>
+    #include <kmx/geohex/index.hpp>
 #endif
 
-namespace h3plus::grid::disk
+namespace kmx::geohex::grid::disk
 {
     std::uint32_t max_size(const k_distance k) noexcept;
 

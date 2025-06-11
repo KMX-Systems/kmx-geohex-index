@@ -3,8 +3,8 @@
 #ifndef PCH
     #include <cmath>
     #include <cstdint>
+    #include <functional>
     #include <numbers>
-    #include <utility>
 #endif
 
 namespace kmx::gis::wgs84
@@ -12,16 +12,27 @@ namespace kmx::gis::wgs84
     class coordinate;
 }
 
-namespace kmx::geohex
+namespace kmx
 {
     constexpr double sqrt3_2 = 0.8660254037844386467637231707529361834714;
 
     template <typename T>
+        requires std::is_enum_v<T>
     constexpr auto operator+(const T e) noexcept
     {
         return static_cast<std::underlying_type_t<T>>(e);
     }
 
+    template <class T>
+    void hash_combine(std::size_t& seed, const T& v) noexcept
+    {
+        std::hash<T> hasher;
+        seed ^= hasher(v) + 0x9e3779b9u + (seed << 6u) + (seed >> 2u);
+    }
+}
+
+namespace kmx::geohex
+{
     namespace coordinate
     {
         class ij;
@@ -123,9 +134,9 @@ namespace kmx::geohex
         _Int rj = std::round(j);
         _Int rk = std::round(k);
 
-        const auto i_diff = std::fabs(static_cast<_Float>(ri) - i);
-        const auto j_diff = std::fabs(static_cast<_Float>(rj) - j);
-        const auto k_diff = std::fabs(static_cast<_Float>(rk) - k);
+        const auto i_diff = std::abs(static_cast<_Float>(ri) - i);
+        const auto j_diff = std::abs(static_cast<_Float>(rj) - j);
+        const auto k_diff = std::abs(static_cast<_Float>(rk) - k);
 
         if ((i_diff > j_diff) && (i_diff > k_diff)) // round, maintaining valid cube coords.
             ri = -rj - rk;

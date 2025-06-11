@@ -20,12 +20,12 @@ namespace kmx::geohex::projection
 
     /// @ref _v3dToFaceV2d
     /// @brief Projects a 3D point on the sphere to 2D UV coordinates on a specified face's plane.
-    error_t project_v3d_to_face_uv(const math::vector3d& v3d, icosahedron::face::id_t face_num, math::vector2d& out_uv) noexcept;
+    error_t project_v3d_to_face_uv(const math::vector3d& v3d, const icosahedron::face::id_t face_num, math::vector2d& out_uv) noexcept;
 
     /// @ref _hex2dToCoordIJK
     /// @brief Converts 2D UV coordinates on a face plane (after scaling/rotation) to IJK coordinates.
     /// @param raw_uv_on_face The UV coordinates directly from projection, before res-specific scaling/rotation.
     /// @param res The target resolution for the IJK.
     /// @param out_ijk Output IJK coordinates.
-    error_t convert_face_uv_to_ijk(const math::vector2d& raw_uv_on_face, resolution_t res, coordinate::ijk& out_ijk) noexcept;
+    error_t convert_face_uv_to_ijk(const math::vector2d& raw_uv_on_face, const resolution_t res, coordinate::ijk& out_ijk) noexcept;
 }

@@ -1,6 +1,5 @@
 /// @file geohex/cell/base.cpp
 #include "kmx/geohex/cell/base.hpp"
-#include <unordered_map>
 
 namespace kmx::geohex::cell::base
 {
@@ -281,26 +280,4 @@ namespace kmx::geohex::cell::base
         return rotations_60ccw_data[base_cell_id];
     }
 
-    static const std::unordered_map<id_t, clockwise_offsets_t> clockwise_offsets_data {
-        {4u, {-1, -1}},   // base cell 4
-        {14u, {2, 6}},    // base cell 14
-        {24u, {1, 5}},    // base cell 24
-        {38u, {3, 7}},    // base cell 38
-        {49u, {0, 9}},    // base cell 49
-        {58u, {4, 8}},    // base cell 58
-        {63u, {11, 15}},  // base cell 63
-        {72u, {12, 16}},  // base cell 72
-        {83u, {10, 19}},  // base cell 83
-        {97u, {13, 17}},  // base cell 97
-        {107u, {14, 18}}, // base cell 107
-        {117u, {-1, -1}}, // base cell 117
-    };
-
-    clockwise_offsets_t clockwise_offsets(const id_t base_cell_id) noexcept
-    {
-        const auto pos = clockwise_offsets_data.find(base_cell_id);
-        if (pos != clockwise_offsets_data.end())
-            return pos->second;
-        return {};
-    }
 }

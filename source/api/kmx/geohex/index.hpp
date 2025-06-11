@@ -5,6 +5,11 @@
     #include <span>
 #endif
 
+namespace kmx::gis::wgs84
+{
+    class coordinate;
+}
+
 namespace kmx::geohex
 {
     class index
@@ -97,4 +102,11 @@ namespace kmx::geohex
     };
 
     static_assert(sizeof(index) == 8u);
+
+    /// @brief Calculates the center geographic coordinate of an H3 cell.
+    /// @ref cellToGeo
+    /// @param index The H3 index of the cell.
+    /// @param[out] coord The output WGS84 coordinate (in radians).
+    /// @return error_t::none on success.
+    error_t to_wgs(const index index, gis::wgs84::coordinate& coord) noexcept;
 }

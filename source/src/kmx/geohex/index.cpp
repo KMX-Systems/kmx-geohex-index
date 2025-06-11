@@ -18,13 +18,13 @@ namespace kmx::geohex
 
     bool index::has_any_7_up_to_resolution(const value_t h, const resolution_t res) noexcept
     {
-        static constexpr uint64_t MHI = 0b100100100100100100100100100100100100100100100;
-        static constexpr uint64_t MLO = MHI >> 2;
+        static constexpr std::uint64_t mhi = 0b100100100100100100100100100100100100100100100;
+        static constexpr std::uint64_t mlo = mhi >> 2u;
 
         const auto shift = 3u * (15u - +res);
         const auto hh = (h >> shift) << shift;
-        const auto result = (hh & MHI & (~hh - MLO));
-        return result != 0;
+        const auto result = (hh & mhi & (~hh - mlo));
+        return result != 0u;
     }
 
     bool index::has_all_7_after_resolution(const value_t h, const resolution_t ress) noexcept
@@ -36,7 +36,7 @@ namespace kmx::geohex
             const auto shift = 19u + 3u * res;
             const auto hh = ~h;
             const auto rr = (hh << shift) >> shift;
-            return rr == 0;
+            return rr == 0u;
         }
 
         return true;
@@ -65,9 +65,9 @@ namespace kmx::geohex
         if (cell::pentagon::check(base_cell))
         {
             const auto hh = (h << 19u) >> 19u;
-            if (hh == 0)
+            if (hh == 0u)
                 return false; // all zeros: res 15 pentagon
-            return (first_one_index(h) % 3u) == 0;
+            return (first_one_index(h) % 3u) == 0u;
         }
 
         return false;
@@ -226,8 +226,22 @@ namespace kmx::geohex
         auto dest = span.begin();
         const auto max_count = std::min<digit_index>(span.size(), digit_count());
         for (digit_index i {}; i != max_count; ++i, ++dest)
-        {
             *dest = static_cast<char>('0' + raw_digit(i));
-        }
+    }
+
+    error_t to_wgs(const index index, gis::wgs84::coordinate& coord) noexcept
+    {
+        if (!index.is_valid())
+            return error_t::cell_invalid;
+
+        // Convert the H3 index to its FaceIJK representation.
+        icosahedron::face::ijk fijk;
+        const error_t err = icosahedron::face::from_index(index, fijk);
+        if (err != error_t::none)
+            return err;
+
+        // Convert the FaceIJK coordinates to geographic coordinates.
+        // return icosahedron::face::to_geo(fijk, index.resolution(), coord);
+        return icosahedron::face::to_wgs(fijk, index.resolution(), coord);
     }
 }

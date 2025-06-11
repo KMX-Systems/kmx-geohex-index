@@ -1,36 +1,11 @@
 /// @file geohex/coordinate/ijk.cpp
 #include "kmx/geohex/coordinate/ijk.hpp"
-#include "kmx/geohex/cell.hpp"
 #include <algorithm>
-#include <cassert>
-#include <limits>
-
-#if defined(H3_OMIT_AUXILIARY_SAFETY_CHECKS)
-    #define ALWAYS(X) (1)
-    #define NEVER(X)  (0)
-#elif !defined(NDEBUG)
-    #define ALWAYS(X) ((X) ? 1 : (assert(0), 0))
-    #define NEVER(X)  ((X) ? (assert(0), 1) : 0)
-#else
-    #define ALWAYS(X) (X)
-    #define NEVER(X)  (X)
-#endif
+#include <cmath>
 
 namespace kmx::geohex::coordinate
 {
-    static constexpr auto int32_max_div_3 = std::numeric_limits<std::int32_t>::max() / 3;
-
-    constexpr bool add_int32s_overflows(auto a, auto b) noexcept
-    {
-        return a > 0 ? (std::numeric_limits<std::int32_t>::max() - a) < b : (std::numeric_limits<std::int32_t>::min() - a) > b;
-    }
-
-    constexpr bool sub_int32s_overflows(auto a, auto b) noexcept
-    {
-        return a >= 0 ? (std::numeric_limits<std::int32_t>::min() + a) >= b : (std::numeric_limits<std::int32_t>::max() + a + 1) < b;
-    }
-
-    ijk ijk::from_cube_round(const double i, const double j, const double k)
+    ijk ijk::from_cube_round(const double i, const double j, const double k) noexcept
     {
         value i_out, j_out, k_out;
         cube_round<double, value>(i, j, k, i_out, j_out, k_out);
@@ -51,331 +26,193 @@ namespace kmx::geohex::coordinate
 
     vector2 ijk::center() const noexcept
     {
-        const auto v = j - k;
-        return {(i - k) - 0.5 * v, v * sqrt3_2};
+        return to_vec2<double>(*this);
     }
 
     ijk ijk::operator+(const ijk& item) const noexcept
     {
-        return {i + item.i, j + item.i, k + item.k};
+        return {i + item.i, j + item.j, k + item.k};
     }
 
     ijk ijk::operator-(const ijk& item) const noexcept
     {
-        return {i - item.i, j - item.i, k - item.k};
+        return {i - item.i, j - item.j, k - item.k};
     }
 
-    void ijk::scale(int factor) noexcept
+    ijk ijk::operator*(const int factor) const noexcept
+    {
+        return {i * factor, j * factor, k * factor};
+    }
+
+    void ijk::scale(const int factor) noexcept
     {
         i *= factor;
         j *= factor;
         k *= factor;
     }
 
-    ijk ijk::operator*(int factor) const noexcept
-    {
-        auto c = *this;
-        c.scale(factor);
-        return c;
-    }
-
     void ijk::operator+=(const ijk& item) noexcept
     {
-        static_cast<ij&>(*this) += item;
+        i += item.i;
+        j += item.j;
         k += item.k;
     }
 
     void ijk::operator-=(const ijk& item) noexcept
     {
-        static_cast<ij&>(*this) -= item;
+        i -= item.i;
+        j -= item.j;
         k -= item.k;
-    }
-
-    bool ijk::normalize_could_overflow() noexcept
-    {
-        // Check for the possibility of overflow
-        const auto [min, max] = std::minmax(i, j);
-        if (min < 0)
-        {
-            // Only if the min is less than 0 will the resulting number be larger
-            // than max. If min is positive, then max is also positive, and a
-            // positive signed integer minus another positive signed integer will
-            // not overflow.
-            if (add_int32s_overflows(max, min))
-                // max + min would overflow
-                return true;
-
-            if (sub_int32s_overflows(0, min))
-                // 0 - INT32_MIN would overflow
-                return true;
-
-            if (sub_int32s_overflows(max, min))
-                // max - min would overflow
-                return true;
-        }
-
-        return false;
     }
 
     void ijk::normalize() noexcept
     {
-        // remove any negative values
-        if (i < 0)
+        // The sum of the components must be 0 for a valid cube coordinate.
+        // This process rounds the values to the nearest valid integer coordinate.
+        if (i + j + k != 0)
         {
-            j -= i;
-            k -= i;
-            i = 0;
-        }
-
-        if (j < 0)
-        {
-            i -= j;
-            k -= j;
-            j = 0;
-        }
-
-        if (k < 0)
-        {
-            i -= k;
-            j -= k;
-            k = 0;
-        }
-
-        // remove the min value if needed
-        const auto min = std::min({i, j, k});
-        if (min > 0)
-        {
-            i -= min;
-            j -= min;
-            k -= min;
+            value i_out, j_out, k_out;
+            cube_round<value, value>(i, j, k, i_out, j_out, k_out);
+            i = i_out;
+            j = j_out;
+            k = k_out;
         }
     }
 
     direction_t ijk::to_digit() const noexcept
     {
-        auto c = *this;
+        // This is only valid for IJK vectors that are unit vectors from the origin.
+        // It's a key part of the grid ascent/descent algorithms.
+        ijk c = *this;
         c.normalize();
 
-        for (std::decay<decltype(direction_count)>::type i = 0; i != direction_count; ++i)
-        {
-            const auto d = static_cast<direction_t>(i);
-            if (c == to_ijk(d))
-                return d;
-        }
+        for (uint8_t digit_val = 0u; digit_val < direction_count; ++digit_val)
+            if (c == to_ijk(static_cast<direction_t>(digit_val)))
+                return static_cast<direction_t>(digit_val);
 
         return direction_t::invalid;
     }
 
-    static constexpr auto seven = 7.0;
-
-    bool ijk::up_ap7_checked() noexcept
-    {
-        // Doesn't need to be checked because i, j, and k must all be non-negative
-        const int ii = i - k;
-        const int jj = j - k;
-
-        // <0 is checked because the input must all be non-negative, but some
-        // negative inputs are used in unit tests to exercise the below.
-        if ((ii >= int32_max_div_3) || (jj >= int32_max_div_3) || (ii < 0) || (jj < 0))
-        {
-            if (add_int32s_overflows(ii, ii))
-                return false;
-
-            int i2 = ii + ii;
-            if (add_int32s_overflows(i2, ii))
-                return false;
-
-            int i3 = i2 + ii;
-            if (add_int32s_overflows(jj, jj))
-                return false;
-
-            int j2 = jj + jj;
-            if (sub_int32s_overflows(i3, jj))
-                return false;
-
-            if (add_int32s_overflows(ii, j2))
-                return false;
-        }
-
-        i = static_cast<int>(std::lround(((ii * 3) - jj) / seven));
-        j = static_cast<int>(std::lround((ii + (jj * 2)) / seven));
-        k = 0;
-
-        // Expected not to be reachable, because max + min or max - min would need
-        // to overflow.
-        if (NEVER(this->normalize_could_overflow()))
-            return false;
-
-        normalize();
-        return true;
-    }
-
-    bool ijk::up_ap7r_checked() noexcept
-    {
-        // Doesn't need to be checked because i, j, and k must all be non-negative
-        const auto ii = i - k;
-        const auto jj = j - k;
-
-        // <0 is checked because the input must all be non-negative, but some
-        // negative inputs are used in unit tests to exercise the below.
-        if (ii >= int32_max_div_3 || jj >= int32_max_div_3 || ii < 0 || jj < 0)
-        {
-            if (add_int32s_overflows(ii, ii))
-                return false;
-
-            const auto i2 = ii + ii;
-            if (add_int32s_overflows(jj, jj))
-                return false;
-
-            const auto j2 = jj + jj;
-            if (add_int32s_overflows(j2, jj))
-                return false;
-
-            const auto j3 = j2 + jj;
-            if (add_int32s_overflows(i2, jj))
-                return false;
-
-            if (sub_int32s_overflows(j3, ii))
-                return false;
-        }
-
-        i = static_cast<int>(std::lround(((ii * 2) + jj) / seven));
-        j = static_cast<int>(std::lround(((jj * 3) - ii) / seven));
-        k = 0;
-
-        // Expected not to be reachable, because max + min or max - min would need
-        // to overflow.
-        if (NEVER(normalize_could_overflow()))
-            return false;
-
-        normalize();
-        return true;
-    }
-
     void ijk::up_ap7() noexcept
     {
-        // convert to CoordIJ
-        const auto ii = i - k;
-        const auto jj = j - k;
-
-        i = static_cast<int>(std::lround((3 * ii - jj) / seven));
-        j = static_cast<int>(std::lround((ii + 2 * jj) / seven));
-        k = 0;
+        // This is the fast algebraic simplification of the Class II parent-finding matrix transform.
+        const double i_prime = static_cast<double>(i);
+        const double j_prime = static_cast<double>(j);
+        const double k_prime = static_cast<double>(k);
+        i = static_cast<value>(std::round((3.0 * i_prime - 1.0 * j_prime - 1.0 * k_prime) / 7.0));
+        j = static_cast<value>(std::round((-1.0 * i_prime + 3.0 * j_prime - 1.0 * k_prime) / 7.0));
+        k = static_cast<value>(std::round((-1.0 * i_prime - 1.0 * j_prime + 3.0 * k_prime) / 7.0));
         normalize();
     }
 
     void ijk::up_ap7r() noexcept
     {
-        // convert to CoordIJ
-        const auto ii = i - k;
-        const auto jj = j - k;
-
-        i = static_cast<int>(std::lround((2 * ii + jj) / seven));
-        j = static_cast<int>(std::lround((3 * jj - ii) / seven));
-        k = 0;
-        normalize();
-    }
-
-    void ijk::transform(ijk i_vec, ijk j_vec, ijk k_vec) noexcept
-    {
-        i_vec.scale(i);
-        j_vec.scale(j);
-        k_vec.scale(k);
-
-        i = i_vec.i + j_vec.i + j_vec.i;
-        j = i_vec.j + j_vec.j + j_vec.j;
-        k = i_vec.k + j_vec.k + j_vec.k;
-
+        // This is the fast algebraic simplification of the Class III parent-finding matrix transform.
+        const double i_prime = static_cast<double>(i);
+        const double j_prime = static_cast<double>(j);
+        const double k_prime = static_cast<double>(k);
+        i = static_cast<value>(std::round((2.0 * i_prime + 1.0 * j_prime - 1.0 * k_prime) / 7.0));
+        j = static_cast<value>(std::round((-1.0 * i_prime + 2.0 * j_prime + 1.0 * k_prime) / 7.0));
+        k = static_cast<value>(std::round((1.0 * i_prime - 1.0 * j_prime + 2.0 * k_prime) / 7.0));
         normalize();
     }
 
     void ijk::down_ap7() noexcept
     {
-        transform({3, 0, 1}, {1, 3, 0}, {0, 1, 3});
+        // Optimized replacement for the transform method, using the inverse matrix of up_ap7.
+        const value i_prime = i;
+        const value j_prime = j;
+        i = 2 * i_prime - j_prime - k;
+        j = -i_prime + 2 * j_prime - k;
+        k = -i_prime - j_prime + 2 * k;
     }
 
     void ijk::down_ap7r() noexcept
     {
-        transform({3, 1, 0}, {0, 3, 1}, {1, 0, 3});
+        // Optimized replacement for the transform method, using the inverse matrix of up_ap7r.
+        const value i_prime = i;
+        const value j_prime = j;
+        i = 2 * i_prime + j_prime - k;
+        j = -i_prime + 2 * j_prime + k;
+        k = i_prime - j_prime + 2 * k;
     }
 
-    void ijk::down_ap3() noexcept
+    ijk ijk::down_ap7(const bool is_class_3) const noexcept
     {
-        transform({2, 0, 1}, {1, 2, 0}, {0, 1, 2});
+        ijk next_ijk = *this;
+        if (is_class_3)
+            next_ijk.down_ap7r();
+        else
+            next_ijk.down_ap7();
+
+        return next_ijk;
     }
 
-    void ijk::down_ap3r() noexcept
+    ijk ijk::up_ap7_copy(const bool is_class_3) const noexcept
     {
-        transform({2, 1, 0}, {0, 2, 1}, {1, 0, 2});
+        ijk next_ijk = *this;
+        if (is_class_3)
+            next_ijk.up_ap7r();
+        else
+            next_ijk.up_ap7();
+
+        return next_ijk;
     }
 
-    void ijk::to_neighbor(const direction_t digit)
+    void ijk::to_neighbor(const direction_t digit) noexcept
     {
-        operator+=(to_ijk(digit));
-        normalize();
+        *this += to_ijk(digit);
     }
 
-    ijk ijk::neighbor(const direction_t digit) const
+    ijk ijk::neighbor(const direction_t digit) const noexcept
     {
-        auto result = *this;
-        result += to_ijk(digit);
-        result.normalize();
-        return result;
+        return *this + to_ijk(digit);
     }
 
     void ijk::rotate_60ccw() noexcept
     {
-        transform({1, 1, 0}, {0, 1, 1}, {1, 0, 1});
+        // A 60-degree counter-clockwise rotation in cube coordinates is (i, j, k) -> (-j, -k, -i).
+        const value temp_i = i;
+        i = -j;
+        j = -k;
+        k = -temp_i;
     }
 
     void ijk::rotate_60cw() noexcept
     {
-        transform({1, 0, 1}, {1, 1, 0}, {0, 1, 1});
+        // A 60-degree clockwise rotation in cube coordinates is (i, j, k) -> (-k, -i, -j).
+        const value temp_i = i;
+        i = -k;
+        k = -j;
+        j = -temp_i;
     }
 
     int ijk::distance_to(const ijk& b) const noexcept
     {
-        ijk diff = *this - b;
-        diff.normalize();
+        const ijk diff = *this - b;
+        // The distance in a hexagonal grid is the max of the absolute differences
+        // of the cube coordinates.
         const ijk abs_diff {std::abs(diff.i), std::abs(diff.j), std::abs(diff.k)};
         return std::max({abs_diff.i, abs_diff.j, abs_diff.k});
     }
 
-    void ijk::to_ij(ij& ij) const noexcept
+    direction_t ijk::leading_digit(const resolution_t res) const noexcept
     {
-        ij.i = i - k;
-        ij.j = j - k;
+        ijk current_ijk = *this;
+        for (resolution_t r = res; +r > 0u; r = static_cast<resolution_t>(+r - 1u))
+        {
+            const ijk parent_ijk = current_ijk.up_ap7_copy(is_class_3(r));
+            const ijk child_at_parent_res = parent_ijk.down_ap7(is_class_3(r));
+            const ijk diff = current_ijk - child_at_parent_res;
+
+            const direction_t digit = diff.to_digit();
+            if (digit != direction_t::center)
+                return digit;
+
+            current_ijk = parent_ijk;
+        }
+
+        return direction_t::center;
     }
 
-    bool ijk::from_ij(const ijk& ij) noexcept
-    {
-        i = ij.i;
-        j = ij.j;
-        k = 0;
-
-        if (normalize_could_overflow())
-            return false;
-
-        normalize();
-        return true;
-    }
-
-    void ijk::to_cube() noexcept
-    {
-        i = -i + k;
-        j = j - k;
-        k = -i - j;
-    }
-
-    void ijk::from_cube() noexcept
-    {
-        i = -i;
-        k = 0;
-        normalize();
-    }
-
-    ijk::value ijk::scalar_sum() const noexcept
-    {
-        return i + j + k;
-    }
-}
+} // namespace kmx::geohex::coordinate

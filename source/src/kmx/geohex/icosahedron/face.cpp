@@ -1,7 +1,10 @@
-/// @file geohex/icosahedron.cpp
+/// @file geohex/icosahedron/face.cpp
 #include "kmx/geohex/icosahedron/face.hpp"
-#include "kmx/geohex/cell.hpp"
+#include "kmx/geohex/cell/base.hpp"
 #include "kmx/geohex/cell/boundary.hpp"
+#include "kmx/geohex/geo_projection.hpp"
+#include <algorithm>
+#include <array>
 
 namespace kmx::geohex::icosahedron::face
 {
@@ -130,15 +133,20 @@ namespace kmx::geohex::icosahedron::face
         id_t::f18, // base cell 121
     };
 
-    id_t of(const cell::base::id_t base_cell_id)
+    constexpr id_t internal_of(const cell::base::id_t base_cell_id)
     {
         return face_data[base_cell_id];
     }
 
+    id_t of(const cell::base::id_t base_cell_id)
+    {
+        return internal_of(base_cell_id);
+    }
+
     bool is_cw_offset(const cell::base::id_t base_cell_id, const id_t face) noexcept
     {
-        const auto offsets = cell::base::clockwise_offsets(base_cell_id);
-        const auto face_id = static_cast<cell::base::clockwise_offset_t>(+face);
+        const auto offsets = cell::pentagon::clockwise_offsets(base_cell_id);
+        const auto face_id = static_cast<cell::pentagon::clockwise_offset_t>(+face);
         return (offsets.first == face_id) || (offsets.second == face_id);
     }
 
@@ -202,110 +210,247 @@ namespace kmx::geohex::icosahedron::face
         return {result[0u], result[1u]};
     }
 
-    error_t get_intersected(const index index, std::span<no_t>& out_faces) noexcept
+    /// @ref getIcosahedronFaces
+    /// @brief Determines the set of icosahedron faces a given H3 cell intersects.
+    error_t get_intersected(const index index, std::span<no_t>& output) noexcept
     {
-        if (out_faces.empty())
-            return error_t::memory_bounds; // Output span must have some capacity
-
         if (!index.is_valid())
+        {
+            output = {};
             return error_t::cell_invalid;
+        }
 
-        // Initialize output with an invalid face number or rely on caller to check count
-        for (auto& f: out_faces)
-            f = count + 1u;
+        // Use a bitset for highly efficient, O(1) tracking of unique faces.
+        std::bitset<count> faces_found;
 
         // 1. Get the cell's boundary vertices.
+        // We create a span of the full buffer to pass to the function.
         std::array<gis::wgs84::coordinate, cell::boundary::max_vertices> boundary_data;
-        std::span<gis::wgs84::coordinate> boundary_data_span {boundary_data.begin(), boundary_data.end()};
-        const auto boundary_err = cell::boundary::get(index, boundary_data_span);
+        std::span<gis::wgs84::coordinate> boundary_span = boundary_data;
+
+        // We assume cell::boundary::get will resize `boundary_span` to the actual count.
+        const error_t boundary_err = cell::boundary::get(index, boundary_span);
         if (boundary_err != error_t::none)
-            return boundary_err; // Other errors like cell_invalid if get_boundary re-validates
-
-        if (boundary_data_span.empty())
-            // This might happen if get_boundary itself couldn't produce vertices (e.g. not_implemented deeper)
-            // Or if it's a point-like cell (not standard H3 but theoretically)
-            return error_t::failed; // Or none, if an empty cell has no faces (H3 cells always have area)
-
-        constexpr std::uint8_t MAX_CELL_BOUNDARY_VERTICES = 10u;
-
-        no_t faces_found[MAX_CELL_BOUNDARY_VERTICES + 1u]; // Max possible unique faces from vertices + center
-        std::uint8_t num_unique_faces {};
-
-        // 2. For each vertex, find the face it's on.
-        for (std::size_t i {}; i < boundary_data_span.size(); ++i)
         {
-            id_t vert_face = icosahedron::face::from(boundary_data_span[i]);
-            no_t vert_face_no = static_cast<no_t>(+vert_face);
-
-            // Add to list if unique
-            bool found {};
-            for (std::uint8_t j = 0; j < num_unique_faces; ++j)
-                if (faces_found[j] == vert_face_no)
-                {
-                    found = true;
-                    break;
-                }
-
-            if (!found)
-            {
-                if (num_unique_faces < (sizeof(faces_found) / sizeof(faces_found)))
-                    // bounds check
-                    faces_found[num_unique_faces++] = vert_face_no;
-                else
-                    // Should not happen if MAX_CELL_BOUNDARY_VERTICES is large enough
-                    // and max_face_intersection_count is respected by output span.
-                    return error_t::failed; // Internal error / too many unique faces from vertices
-            }
+            output = {};
+            return boundary_err;
         }
 
-        // 3. Also check the cell center, as vertices alone might not capture the face
-        //    for a cell entirely within one face but near an edge.
-        gis::wgs84::coordinate cell_center_geo;
-        error_t center_err = cell::to_wgs84(index, cell_center_geo);
+        // 2. Collect faces from all relevant points (vertices + center).
+        for (const auto& vertex_coord: boundary_span)
+            faces_found.set(+from_wgs(vertex_coord));
+
+        // Also check the cell center, which is essential for cells entirely within one face.
+        gis::wgs84::coordinate cell_center;
+        // Assuming the index can provide its center coordinate. This is a common requirement.
+        // A free function to_wgs(index, out) is also plausible.
+        const error_t center_err = to_wgs(index, cell_center);
         if (center_err != error_t::none)
-            return center_err;
-
-        id_t center_face = icosahedron::face::from(cell_center_geo);
-        no_t center_face_no = static_cast<no_t>(+center_face);
-        bool center_face_is_new = true;
-        for (std::uint8_t j {}; j < num_unique_faces; ++j)
-            if (faces_found[j] == center_face_no)
-            {
-                center_face_is_new = false;
-                break;
-            }
-
-        if (center_face_is_new)
         {
-            if (num_unique_faces < (sizeof(faces_found) / sizeof(faces_found)))
-                faces_found[num_unique_faces++] = center_face_no;
-            else
-                return error_t::failed; // Internal error
+            output = {};
+            return center_err;
         }
 
-        // 4. Copy unique faces to output span, respecting its size.
-        //    The number of faces should not exceed max_face_intersection_count(index).
-        const auto max_allowed = std::min(static_cast<std::uint8_t>(out_faces.size()), index.max_face_intersection_count());
-        const auto count_to_write = std::min(num_unique_faces, max_allowed);
-        for (std::uint8_t i {}; i < count_to_write; ++i)
-            out_faces[i] = faces_found[i];
+        faces_found.set(+from_wgs(cell_center));
 
-        // If out_faces was larger than count_to_write, remaining elements keep sentinel.
+        // 3. Write the unique faces found into the output buffer.
+        std::size_t faces_written {};
+        const std::size_t output_capacity = output.size();
 
-        // The H3 C API for `getIcosahedronFaces` doesn't explicitly return the count of faces found.
-        // It expects `out` to be an array of size `maxFaceCount()`, and it fills it.
-        // The caller then iterates through `out` until it finds a sentinel or up to `maxFaceCount()`.
-        // Our span-based approach is a bit different. If precise count is needed,
-        // the function signature might need to change to return `num_unique_faces_written`.
-        // For now, caller can iterate `out_faces` up to `count_to_write` or until sentinel.
+        // Iterate through all possible face IDs (0-19).
+        for (no_t i {}; i < count; ++i)
+        {
+            if (faces_found.test(i))
+            {
+                if (faces_written < output_capacity)
+                    output[faces_written++] = i;
+                else
+                    // The provided buffer is full. Stop writing but do not return an error,
+                    // as the operation was successful. The caller receives a truncated result.
+                    break;
+            }
+        }
+
+        // 4. Resize the caller's span to reflect the actual number of faces written.
+        // This is the idiomatic way to return the count with this signature.
+        output = output.subspan(0u, faces_written);
 
         return error_t::none;
     }
 
-    id_t from(const gis::wgs84::coordinate& coord) noexcept
+    id_t from_wgs(const gis::wgs84::coordinate& coord) noexcept
     {
-        // TODO implement
-        return id_t::f0;
+        math::vector3d v3d;
+        projection::to_v3d(coord, v3d);
+
+        id_t best_face = id_t::f0;
+        double max_dot = -2.0; // Dot products are in [-1, 1]
+
+        for (no_t i {}; i < count; ++i)
+        {
+            const auto face_id = static_cast<id_t>(i);
+            const auto face_center = center_point(face_id);
+            const double dot = v3d.dot(face_center);
+            if (dot > max_dot)
+            {
+                max_dot = dot;
+                best_face = face_id;
+            }
+        }
+
+        return best_face;
+    }
+
+    using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
+
+    static constexpr std::uint8_t unique_ijk_instances = 8u;
+
+    static constexpr std::array<pseudo_ijk, unique_ijk_instances> unique_pseudo_ijk_array {
+        pseudo_ijk {0, 0, 0}, // Index 0
+        pseudo_ijk {0, 0, 1}, // Index 1
+        pseudo_ijk {0, 1, 0}, // Index 2
+        pseudo_ijk {0, 1, 1}, // Index 3
+        pseudo_ijk {1, 0, 0}, // Index 4
+        pseudo_ijk {1, 0, 1}, // Index 5
+        pseudo_ijk {1, 1, 0}, // Index 6
+        pseudo_ijk {2, 0, 0}, // Index 7
+    };
+
+    struct home_fijk_data
+    {
+        std::uint8_t index; // index in unique_pseudo_ijk_array
+        id_t face;
+    };
+
+    static constexpr std::array<home_fijk_data, cell::base::count> home_fijk_array {{
+        {4u, id_t::f1},  // base cell 0:   {1, 0, 0}
+        {6u, id_t::f2},  // base cell 1:   {1, 1, 0}
+        {0u, id_t::f1},  // base cell 2:   {0, 0, 0}
+        {4u, id_t::f2},  // base cell 3:   {1, 0, 0}
+        {7u, id_t::f0},  // base cell 4:   {2, 0, 0}
+        {6u, id_t::f1},  // base cell 5:   {1, 1, 0}
+        {1u, id_t::f1},  // base cell 6:   {0, 0, 1}
+        {0u, id_t::f2},  // base cell 7:   {0, 0, 0}
+        {4u, id_t::f0},  // base cell 8:   {1, 0, 0}
+        {2u, id_t::f2},  // base cell 9:   {0, 1, 0}
+        {2u, id_t::f1},  // base cell 10:  {0, 1, 0}
+        {3u, id_t::f1},  // base cell 11:  {0, 1, 1}
+        {4u, id_t::f3},  // base cell 12:  {1, 0, 0}
+        {6u, id_t::f3},  // base cell 13:  {1, 1, 0}
+        {7u, id_t::f11}, // base cell 14:  {2, 0, 0}
+        {4u, id_t::f4},  // base cell 15:  {1, 0, 0}
+        {0u, id_t::f0},  // base cell 16:  {0, 0, 0}
+        {2u, id_t::f6},  // base cell 17:  {0, 1, 0}
+        {1u, id_t::f0},  // base cell 18:  {0, 0, 1}
+        {3u, id_t::f2},  // base cell 19:  {0, 1, 1}
+        {1u, id_t::f7},  // base cell 20:  {0, 0, 1}
+        {1u, id_t::f2},  // base cell 21:  {0, 0, 1}
+        {6u, id_t::f0},  // base cell 22:  {1, 1, 0}
+        {1u, id_t::f6},  // base cell 23:  {0, 0, 1}
+        {7u, id_t::f10}, // base cell 24:  {2, 0, 0}
+        {0u, id_t::f6},  // base cell 25:  {0, 0, 0}
+        {0u, id_t::f3},  // base cell 26:  {0, 0, 0}
+        {4u, id_t::f11}, // base cell 27:  {1, 0, 0}
+        {6u, id_t::f4},  // base cell 28:  {1, 1, 0}
+        {2u, id_t::f3},  // base cell 29:  {0, 1, 0}
+        {3u, id_t::f0},  // base cell 30:  {0, 1, 1}
+        {0u, id_t::f4},  // base cell 31:  {0, 0, 0}
+        {2u, id_t::f5},  // base cell 32:  {0, 1, 0}
+        {2u, id_t::f0},  // base cell 33:  {0, 1, 0}
+        {2u, id_t::f7},  // base cell 34:  {0, 1, 0}
+        {6u, id_t::f11}, // base cell 35:  {1, 1, 0}
+        {0u, id_t::f7},  // base cell 36:  {0, 0, 0}
+        {4u, id_t::f10}, // base cell 37:  {1, 0, 0}
+        {7u, id_t::f12}, // base cell 38:  {2, 0, 0}
+        {5u, id_t::f6},  // base cell 39:  {1, 0, 1}
+        {5u, id_t::f7},  // base cell 40:  {1, 0, 1}
+        {1u, id_t::f4},  // base cell 41:  {0, 0, 1}
+        {1u, id_t::f3},  // base cell 42:  {0, 0, 1}
+        {3u, id_t::f3},  // base cell 43:  {0, 1, 1}
+        {2u, id_t::f4},  // base cell 44:  {0, 1, 0}
+        {4u, id_t::f6},  // base cell 45:  {1, 0, 0}
+        {0u, id_t::f11}, // base cell 46:  {0, 0, 0}
+        {1u, id_t::f8},  // base cell 47:  {0, 0, 1}
+        {1u, id_t::f5},  // base cell 48:  {0, 0, 1}
+        {7u, id_t::f14}, // base cell 49:  {2, 0, 0}
+        {0u, id_t::f5},  // base cell 50:  {0, 0, 0}
+        {4u, id_t::f12}, // base cell 51:  {1, 0, 0}
+        {6u, id_t::f10}, // base cell 52:  {1, 1, 0}
+        {3u, id_t::f4},  // base cell 53:  {0, 1, 1}
+        {6u, id_t::f12}, // base cell 54:  {1, 1, 0}
+        {4u, id_t::f7},  // base cell 55:  {1, 0, 0}
+        {2u, id_t::f11}, // base cell 56:  {0, 1, 0}
+        {0u, id_t::f10}, // base cell 57:  {0, 0, 0}
+        {7u, id_t::f13}, // base cell 58:  {2, 0, 0}
+        {1u, id_t::f10}, // base cell 59:  {0, 0, 1}
+        {1u, id_t::f11}, // base cell 60:  {0, 0, 1}
+        {2u, id_t::f9},  // base cell 61:  {0, 1, 0}
+        {2u, id_t::f8},  // base cell 62:  {0, 1, 0}
+        {7u, id_t::f6},  // base cell 63:  {2, 0, 0}
+        {0u, id_t::f8},  // base cell 64:  {0, 0, 0}
+        {1u, id_t::f9},  // base cell 65:  {0, 0, 1}
+        {4u, id_t::f14}, // base cell 66:  {1, 0, 0}
+        {5u, id_t::f5},  // base cell 67:  {1, 0, 1}
+        {3u, id_t::f16}, // base cell 68:  {0, 1, 1}
+        {5u, id_t::f8},  // base cell 69:  {1, 0, 1}
+        {4u, id_t::f5},  // base cell 70:  {1, 0, 0}
+        {0u, id_t::f12}, // base cell 71:  {0, 0, 0}
+        {7u, id_t::f7},  // base cell 72:  {2, 0, 0}
+        {2u, id_t::f12}, // base cell 73:  {0, 1, 0}
+        {2u, id_t::f10}, // base cell 74:  {0, 1, 0}
+        {0u, id_t::f9},  // base cell 75:  {0, 0, 0}
+        {4u, id_t::f13}, // base cell 76:  {1, 0, 0}
+        {1u, id_t::f16}, // base cell 77:  {0, 0, 1}
+        {3u, id_t::f15}, // base cell 78:  {0, 1, 1}
+        {2u, id_t::f15}, // base cell 79:  {0, 1, 0}
+        {2u, id_t::f16}, // base cell 80:  {0, 1, 0}
+        {6u, id_t::f14}, // base cell 81:  {1, 1, 0}
+        {6u, id_t::f13}, // base cell 82:  {1, 1, 0}
+        {7u, id_t::f5},  // base cell 83:  {2, 0, 0}
+        {4u, id_t::f8},  // base cell 84:  {1, 0, 0}
+        {0u, id_t::f14}, // base cell 85:  {0, 0, 0}
+        {5u, id_t::f9},  // base cell 86:  {1, 0, 1}
+        {1u, id_t::f14}, // base cell 87:  {0, 0, 1}
+        {1u, id_t::f17}, // base cell 88:  {0, 0, 1}
+        {1u, id_t::f12}, // base cell 89:  {0, 0, 1}
+        {0u, id_t::f16}, // base cell 90:  {0, 0, 0}
+        {3u, id_t::f17}, // base cell 91:  {0, 1, 1}
+        {1u, id_t::f15}, // base cell 92:  {0, 0, 1}
+        {5u, id_t::f16}, // base cell 93:  {1, 0, 1}
+        {4u, id_t::f9},  // base cell 94:  {1, 0, 0}
+        {0u, id_t::f15}, // base cell 95:  {0, 0, 0}
+        {0u, id_t::f13}, // base cell 96:  {0, 0, 0}
+        {7u, id_t::f8},  // base cell 97:  {2, 0, 0}
+        {2u, id_t::f13}, // base cell 98:  {0, 1, 0}
+        {5u, id_t::f17}, // base cell 99:  {1, 0, 1}
+        {2u, id_t::f19}, // base cell 100: {0, 1, 0}
+        {2u, id_t::f14}, // base cell 101: {0, 1, 0}
+        {3u, id_t::f19}, // base cell 102: {0, 1, 1}
+        {2u, id_t::f17}, // base cell 103: {0, 1, 0}
+        {1u, id_t::f13}, // base cell 104: {0, 0, 1}
+        {0u, id_t::f17}, // base cell 105: {0, 0, 0}
+        {4u, id_t::f16}, // base cell 106: {1, 0, 0}
+        {7u, id_t::f9},  // base cell 107: {2, 0, 0}
+        {5u, id_t::f15}, // base cell 108: {1, 0, 1}
+        {4u, id_t::f15}, // base cell 109: {1, 0, 0}
+        {3u, id_t::f18}, // base cell 110: {0, 1, 1}
+        {1u, id_t::f18}, // base cell 111: {0, 0, 1}
+        {1u, id_t::f19}, // base cell 112: {0, 0, 1}
+        {4u, id_t::f17}, // base cell 113: {1, 0, 0}
+        {0u, id_t::f19}, // base cell 114: {0, 0, 0}
+        {2u, id_t::f18}, // base cell 115: {0, 1, 0}
+        {5u, id_t::f18}, // base cell 116: {1, 0, 1}
+        {7u, id_t::f19}, // base cell 117: {2, 0, 0}
+        {4u, id_t::f19}, // base cell 118: {1, 0, 0}
+        {0u, id_t::f18}, // base cell 119: {0, 0, 0}
+        {5u, id_t::f19}, // base cell 120: {1, 0, 1}
+        {4u, id_t::f18}, // base cell 121: {1, 0, 0}
+    }};
+
+    ijk home(const cell::base::id_t base_id)
+    {
+        const auto& item = home_fijk_array[+base_id];
+        return {coordinate::ijk {unique_pseudo_ijk_array[item.index]}, item.face};
     }
 
     /// @ref _h3ToFaceIjk (H3 C internal)
@@ -315,25 +460,174 @@ namespace kmx::geohex::icosahedron::face
     /// @return error_t::none on success, or an error code.
     error_t from(const index index, ijk& out) noexcept
     {
-        // TODO implement
+        if (!index.is_valid())
+            return error_t::cell_invalid;
+
+        const auto base_cell = index.base_cell();
+        const auto res = index.resolution();
+
+        // 1. Get the base cell's canonical orientation using direct lookups.
+        // This is far more efficient than a hash map.
+        oriented_ijk fijk_oriented;
+        fijk_oriented.face = of(base_cell);                                                  // from the existing `face_data` array
+        fijk_oriented.ijk_coords = {};                                                       // by definition
+        fijk_oriented.ccw_rotations_60 = cell::pentagon::clockwise_offsets(base_cell).first; // from the new array
+
+        // 2. From res 1 up to the cell's resolution, apply child digits to descend the tree.
+        for (resolution_t r = resolution_t::r1; +r <= +res; r = static_cast<resolution_t>(+r + 1u))
+        {
+            // Move to the center of the finer resolution grid.
+            auto& ijk_coords = fijk_oriented.ijk_coords;
+            if (is_class_3(r))
+                ijk_coords.down_ap7r();
+            else
+                ijk_coords.down_ap7();
+
+            const auto digit = static_cast<direction_t>(index.digit(+r - 1));
+
+            // Rotate the child digit to match the base cell's orientation
+            auto rotated_digit_ijk = coordinate::to_ijk(digit);
+            for (int i = 0; i < fijk_oriented.ccw_rotations_60; ++i)
+                rotated_digit_ijk.rotate_60ccw();
+
+            // Apply child digit vector
+            fijk_oriented.ijk_coords += rotated_digit_ijk;
+
+            // For pentagons, we must also apply local rotations based on the direction taken.
+            if (cell::pentagon::check(base_cell))
+            {
+                const auto& local_rots = cell::base::rotations_60ccw(base_cell);
+                for (int i = 0; i < local_rots[+digit]; ++i)
+                    fijk_oriented.ijk_coords.rotate_60ccw();
+
+                // TODO: A full implementation would call `adjust_overage` here if crossing face boundaries.
+            }
+
+            ijk_coords.normalize();
+        }
+
+        out = fijk_oriented; // Copy face and ijk_coords
         return error_t::none;
     }
 
-    error_t to_geo(const ijk& fijk, const resolution_t res, gis::wgs84::coordinate& out_coord) noexcept
+    static constexpr std::array<math::vector3d, 12u> icosahedron_vertices {{
+        {0.85065080835204, 0.00000000000000, 0.52573111211913},
+        {0.85065080835204, 0.00000000000000, -0.52573111211913},
+        {0.52573111211913, -0.85065080835204, 0.00000000000000},
+        {0.00000000000000, -0.52573111211913, 0.85065080835204},
+        {-0.52573111211913, -0.85065080835204, 0.00000000000000},
+        {-0.85065080835204, 0.00000000000000, 0.52573111211913},
+        {-0.52573111211913, 0.85065080835204, 0.00000000000000},
+        {0.00000000000000, 0.52573111211913, 0.85065080835204},
+        {0.52573111211913, 0.85065080835204, 0.00000000000000},
+        {-0.85065080835204, 0.00000000000000, -0.52573111211913},
+        {0.00000000000000, -0.52573111211913, -0.85065080835204},
+        {0.00000000000000, 0.52573111211913, -0.85065080835204},
+    }};
+
+    /// @brief Defines which 3 of the 12 vertices form each of the 20 faces.
+    /// The vertex indices are ordered counter-clockwise.
+    using face_vertices_t = std::array<std::int8_t, 3u>;
+    static constexpr std::array<face_vertices_t, count> face_to_vertices {
+        {{{0, 8, 7}},  {{0, 3, 2}},  {{0, 2, 1}},  {{0, 7, 5}},  {{0, 5, 3}},   {{8, 0, 1}},  {{2, 3, 4}},
+         {{3, 5, 4}},  {{5, 7, 6}},  {{7, 8, 6}},  {{1, 2, 10}}, {{4, 2, 10}},  {{9, 5, 6}},  {{4, 5, 9}},
+         {{6, 8, 11}}, {{8, 1, 11}}, {{9, 6, 11}}, {{10, 2, 4}}, {{1, 10, 11}}, {{9, 11, 10}}}};
+
+    /// @brief For each face, lists its 3 neighboring faces in CCW order.
+    /// A value of -1 indicates no neighbor in that direction (should not happen).
+    using face_neighbors_t = std::array<std::int8_t, 3u>;
+    static constexpr std::array<face_neighbors_t, count> face_neighbors {
+        {{{15, 9, 1}},  {{0, 2, 4}},  {{1, 10, 5}},   {{0, 4, 8}},    {{1, 3, 7}},    {{0, 10, 2}},  {{9, 8, 14}},
+         {{4, 13, 11}}, {{3, 12, 6}}, {{0, 14, 7}},   {{1, 5, 11}},   {{7, 17, 10}},  {{8, 16, 13}}, {{7, 12, 17}},
+         {{9, 16, 15}}, {{0, 18, 9}}, {{12, 14, 18}}, {{11, 13, 19}}, {{15, 16, 19}}, {{17, 18, 16}}}};
+
+    /// @brief Gets the neighboring face by traversing across a shared vertex.
+    /// @param face The starting face.
+    /// @param vertex The index of the vertex on the starting face (0, 1, or 2).
+    /// @return The ID of the neighboring face.
+    static id_t get_neighbor_face(const id_t face, const std::int8_t vertex) noexcept
     {
-        // TODO implement
-        return error_t::none;
+        return static_cast<id_t>(face_neighbors[+face][vertex]);
     }
 
     /// @ref _geoToFaceIjk (H3 C internal)
     /// @brief Converts geographic WGS84 coordinates (radians) to FaceIJK representation.
-    /// @param geo_coord Geographic coordinates in radians.
-    /// @param res The target H3 resolution.
-    /// @param out_fijk Output: The FaceIJK representation.
-    /// @return error_t::none on success.
-    error_t to_ijk(const gis::wgs84::coordinate& coord, const resolution_t res, ijk& out_fijk) noexcept
+    error_t from_wgs(const gis::wgs84::coordinate& coord, const resolution_t res, ijk& out_fijk) noexcept
     {
-        // TODO implement
+        math::vector3d v3d;
+        projection::to_v3d(coord, v3d);
+        id_t center_face = from_wgs(coord);
+
+        math::vector2d uv;
+        if (projection::project_v3d_to_face_uv(v3d, center_face, uv) != error_t::none)
+            return error_t::failed;
+
+        coordinate::ijk center_ijk_coords;
+        if (projection::convert_face_uv_to_ijk(uv, res, center_ijk_coords) != error_t::none)
+            return error_t::failed;
+
+        const auto center_v2d = coordinate::to_vec2<double>(center_ijk_coords);
+        double min_dist_sq = hex2d_distance_sq(uv, center_v2d);
+
+        out_fijk.face = center_face;
+        out_fijk.ijk_coords = center_ijk_coords;
+
+        std::array<id_t, count> face_queue;
+        int queue_pos = 0;
+        int queue_len = 1;
+        face_queue[0] = center_face;
+        std::array<bool, count> checked_faces {};
+        checked_faces[+center_face] = true;
+
+        while (queue_pos < queue_len)
+        {
+            const id_t current_face = face_queue[queue_pos++];
+            for (int i = 0; i < 3; ++i)
+            {
+                id_t neighbor_face = get_neighbor_face(current_face, i);
+                if (checked_faces[+neighbor_face])
+                    continue;
+                checked_faces[+neighbor_face] = true;
+
+                math::vector2d neighbor_uv;
+                if (projection::project_v3d_to_face_uv(v3d, neighbor_face, neighbor_uv) != error_t::none)
+                    continue;
+
+                coordinate::ijk neighbor_ijk_coords;
+                projection::convert_face_uv_to_ijk(neighbor_uv, res, neighbor_ijk_coords);
+
+                const auto neighbor_v2d = coordinate::to_vec2<double>(neighbor_ijk_coords);
+                const double dist_sq = hex2d_distance_sq(neighbor_uv, neighbor_v2d);
+
+                if (dist_sq < min_dist_sq)
+                {
+                    min_dist_sq = dist_sq;
+                    out_fijk.face = neighbor_face;
+                    out_fijk.ijk_coords = neighbor_ijk_coords;
+                    queue_pos = 0;
+                    queue_len = 1;
+                    face_queue[0] = out_fijk.face;
+                    checked_faces.fill(false);
+                    checked_faces[+out_fijk.face] = true;
+                    break;
+                }
+                if (queue_len < count)
+                {
+                    face_queue[queue_len++] = neighbor_face;
+                }
+            }
+        }
+
+        const auto final_base_cell = to_base_cell(out_fijk, res);
+        if (cell::pentagon::check(final_base_cell) && !is_class_3(res))
+        {
+            coordinate::ijk temp_ijk = out_fijk.ijk_coords;
+            temp_ijk.normalize();
+            if (temp_ijk.leading_digit(res) == direction_t::ik_axes)
+            {
+                out_fijk.ijk_coords.rotate_60cw();
+            }
+        }
         return error_t::none;
     }
 
@@ -453,7 +747,7 @@ namespace kmx::geohex::icosahedron::face
                 {
                     constexpr std::uint8_t direction_offset = 2u;
                     const auto& source = data[pentagon_no][+direction - direction_offset];
-                    return icosahedron::face::ijk {std::get<0>(source), std::get<1>(source)};
+                    return ijk {std::get<0>(source), std::get<1>(source)};
                 }
                 default:
                     break;
@@ -538,4 +832,573 @@ namespace kmx::geohex::icosahedron::face
         5.758833981448388027, // face 18
         4.455774101589558636  // face 19
     };
+
+    /// @brief A flat array of all base cell IDs, pre-sorted by their home face ID.
+    static constexpr std::array<cell::base::id_t, cell::base::count> flat_data_sorted_by_face //
+        {{                                                                                    //
+          // Face 0 (7)
+          4u, 8u, 16u, 18u, 22u, 30u, 33u,
+          // Face 1 (6)
+          0u, 2u, 5u, 6u, 10u, 11u,
+          // Face 2 (6)
+          1u, 3u, 7u, 9u, 19u, 21u,
+          // Face 3 (6)
+          12u, 13u, 26u, 29u, 42u, 43u,
+          // Face 4 (6)
+          15u, 28u, 31u, 41u, 44u, 53u,
+          // Face 5 (6)
+          32u, 48u, 50u, 67u, 70u, 83u,
+          // Face 6 (6)
+          17u, 23u, 25u, 39u, 45u, 63u,
+          // Face 7 (6)
+          20u, 34u, 36u, 40u, 55u, 72u,
+          // Face 8 (6)
+          47u, 62u, 64u, 69u, 84u, 97u,
+          // Face 9 (6)
+          61u, 65u, 75u, 86u, 94u, 107u,
+          // Face 10 (6)
+          24u, 37u, 52u, 57u, 59u, 74u,
+          // Face 11 (6)
+          14u, 27u, 35u, 46u, 56u, 60u,
+          // Face 12 (6)
+          38u, 51u, 54u, 71u, 73u, 89u,
+          // Face 13 (6)
+          58u, 76u, 82u, 96u, 98u, 104u,
+          // Face 14 (6)
+          49u, 66u, 81u, 85u, 87u, 101u,
+          // Face 15 (6)
+          78u, 79u, 92u, 95u, 108u, 109u,
+          // Face 16 (6)
+          68u, 77u, 80u, 90u, 93u, 106u,
+          // Face 17 (6)
+          88u, 91u, 99u, 103u, 105u, 113u,
+          // Face 18 (6)
+          110u, 111u, 115u, 116u, 119u, 121u,
+          // Face 19 (7)
+          100u, 102u, 112u, 114u, 117u, 118u, 120u}};
+
+    /// @brief A `constexpr` array of spans, providing direct access to base cells for a given face.
+    static constexpr std::array<std::span<const cell::base::id_t>, count> face_lookup_spans {{
+        std::span(flat_data_sorted_by_face.data() + 0u, 7u),   // Face 0
+        std::span(flat_data_sorted_by_face.data() + 7u, 6u),   // Face 1
+        std::span(flat_data_sorted_by_face.data() + 13u, 6u),  // Face 2
+        std::span(flat_data_sorted_by_face.data() + 19u, 6u),  // Face 3
+        std::span(flat_data_sorted_by_face.data() + 25u, 6u),  // Face 4
+        std::span(flat_data_sorted_by_face.data() + 31u, 6u),  // Face 5
+        std::span(flat_data_sorted_by_face.data() + 37u, 6u),  // Face 6
+        std::span(flat_data_sorted_by_face.data() + 43u, 6u),  // Face 7
+        std::span(flat_data_sorted_by_face.data() + 49u, 6u),  // Face 8
+        std::span(flat_data_sorted_by_face.data() + 55u, 6u),  // Face 9
+        std::span(flat_data_sorted_by_face.data() + 61u, 6u),  // Face 10
+        std::span(flat_data_sorted_by_face.data() + 67u, 6u),  // Face 11
+        std::span(flat_data_sorted_by_face.data() + 73u, 6u),  // Face 12
+        std::span(flat_data_sorted_by_face.data() + 79u, 6u),  // Face 13
+        std::span(flat_data_sorted_by_face.data() + 85u, 6u),  // Face 14
+        std::span(flat_data_sorted_by_face.data() + 91u, 6u),  // Face 15
+        std::span(flat_data_sorted_by_face.data() + 97u, 6u),  // Face 16
+        std::span(flat_data_sorted_by_face.data() + 103u, 6u), // Face 17
+        std::span(flat_data_sorted_by_face.data() + 109u, 6u), // Face 18
+        std::span(flat_data_sorted_by_face.data() + 115u, 7u)  // Face 19
+    }};
+
+    error_t from_index(const index index, ijk& out) noexcept
+    {
+        if (!index.is_valid())
+            return error_t::cell_invalid;
+
+        const auto base_cell = index.base_cell();
+        const auto res = index.resolution();
+
+        oriented_ijk fijk_oriented;
+        fijk_oriented.face = of(base_cell);
+
+        auto& ijk_coords = fijk_oriented.ijk_coords;
+        ijk_coords = {};
+
+        fijk_oriented.ccw_rotations_60 = cell::base::get_canonical_orientation(base_cell);
+
+        for (resolution_t r = resolution_t::r1; +r <= +res; r = static_cast<resolution_t>(+r + 1u))
+        {
+            if (is_class_3(r))
+                ijk_coords.down_ap7r();
+            else
+                ijk_coords.down_ap7();
+
+            const auto digit = static_cast<direction_t>(index.digit(+r - 1u));
+            auto rotated_digit_ijk = coordinate::to_ijk(digit);
+            for (int i {}; i < fijk_oriented.ccw_rotations_60; ++i)
+                rotated_digit_ijk.rotate_60ccw();
+
+            ijk_coords += rotated_digit_ijk;
+            if (cell::pentagon::check(base_cell))
+            {
+                const auto& local_rots = cell::base::rotations_60ccw(base_cell);
+                for (int i {}; i < local_rots[+digit]; ++i)
+                    fijk_oriented.ijk_coords.rotate_60ccw();
+            }
+
+            fijk_oriented.ijk_coords.normalize();
+        }
+
+        out = fijk_oriented;
+        return error_t::none;
+    }
+
+    // This is the full inverse of `from_index`. It takes a FaceIJK and produces
+    // a valid H3 index. This is the missing link needed for vertex creation.
+    // In a real project, this would live in the `icosahedron::face` namespace.
+    error_t to_index(const ijk& fijk, const resolution_t res, index& out_index) noexcept
+    {
+        // 1. First, determine the base cell for the given FaceIJK.
+        cell::base::id_t base_cell;
+        int orientation; // This will be the orientation of the path *from* the base cell.
+        if (to_base_cell_and_orientation(fijk, res, base_cell, orientation) != error_t::none)
+            return error_t::failed;
+
+        // 2. Set the constant parts of the output index.
+        out_index.set_resolution(res);
+        out_index.set_base_cell(base_cell);
+        out_index.set_mode(index_mode_t::cell); // Assuming cell mode for now.
+
+        // 3. Now, determine the digits for each resolution from 1 to `res`.
+        for (resolution_t r = resolution_t::r1; +r <= +res; r = static_cast<resolution_t>(+r + 1u))
+        {
+            // a. Find the IJK coordinates of our target `fijk` at the current resolution `r`.
+            coordinate::ijk ijk_at_res_r;
+            if (to_ijk_at_resolution(fijk, res, r, ijk_at_res_r) != error_t::none)
+                return error_t::failed;
+
+            // b. Find the IJK coordinates of the parent cell (at resolution r-1).
+            coordinate::ijk parent_ijk;
+            if (to_ijk_at_resolution(fijk, res, static_cast<resolution_t>(+r - 1u), parent_ijk) != error_t::none)
+                return error_t::failed;
+
+            // c. Scale the parent's IJK down to the grid of resolution `r`.
+            parent_ijk = parent_ijk.down_ap7(is_class_3(r));
+
+            // d. The difference between the cell and its scaled parent is the digit.
+            const coordinate::ijk diff = ijk_at_res_r - parent_ijk;
+
+            out_index.set_digit(+r - 1u, +diff.to_digit());
+        }
+
+        return error_t::none;
+    }
+
+    error_t to_wgs(const ijk& fijk, const resolution_t res, gis::wgs84::coordinate& out_coord) noexcept
+    {
+        math::vector3d v3d;
+        if (projection::face_ijk_to_v3d(fijk, res, v3d) != error_t::none)
+            return error_t::failed;
+
+        projection::from_v3d(v3d, out_coord);
+        return error_t::none;
+    }
+
+    error_t to_base_cell_and_orientation(const ijk& fijk, const resolution_t res, cell::base::id_t& out_base_cell,
+                                         int& out_orientation) noexcept
+    {
+        oriented_ijk fijk_oriented;
+        fijk_oriented.face = fijk.face;
+        fijk_oriented.ijk_coords = fijk.ijk_coords;
+        fijk_oriented.ccw_rotations_60 = {};
+
+        // Ascend the grid from the cell's resolution up to resolution 0.
+        for (resolution_t r = res; +r > 0u; r = static_cast<resolution_t>(+r - 1u))
+        {
+            coordinate::ijk last_ijk = fijk_oriented.ijk_coords;
+            if (is_class_3(r))
+            {
+                fijk_oriented.ijk_coords.up_ap7r();
+            }
+            else
+            {
+                fijk_oriented.ijk_coords.up_ap7();
+            }
+
+            coordinate::ijk diff = last_ijk - fijk_oriented.ijk_coords;
+            diff.scale(is_class_3(r) ? 3 : 7);
+            coordinate::ijk rotated_parent_ijk = last_ijk - diff;
+
+            if (fijk_oriented.ijk_coords != rotated_parent_ijk)
+            {
+                coordinate::ijk tmp = fijk_oriented.ijk_coords;
+                int rotations = 0;
+                while (tmp != rotated_parent_ijk)
+                {
+                    tmp.rotate_60ccw();
+                    rotations++;
+                    if (rotations > 6)
+                        return error_t::failed;
+                }
+
+                fijk_oriented.ccw_rotations_60 = (fijk_oriented.ccw_rotations_60 + rotations) % 6;
+            }
+        }
+
+        // At res 0, look up the base cell using the compile-time generated table.
+        // This now refers directly to `face_lookup_spans` for maximum clarity.
+        const auto& candidates = face_lookup_spans[+fijk_oriented.face];
+        for (const cell::base::id_t candidate_bc: candidates)
+        {
+            // A res 0 FaceIJK from a valid ascent must have ijk coords {0,0,0}.
+            if (fijk_oriented.ijk_coords.is_origin())
+            {
+                out_base_cell = candidate_bc;
+                int canonical_orientation = cell::base::get_canonical_orientation(out_base_cell);
+                out_orientation = (canonical_orientation + fijk_oriented.ccw_rotations_60) % 6;
+                return error_t::none;
+            }
+        }
+
+        return error_t::cell_invalid;
+    }
+
+    cell::base::id_t to_base_cell(const ijk& fijk, const resolution_t res) noexcept
+    {
+        cell::base::id_t base_cell = cell::base::invalid_index;
+        int orientation = 0;
+        if (to_base_cell_and_orientation(fijk, res, base_cell, orientation) == error_t::none)
+            return base_cell;
+
+        return cell::base::invalid_index;
+    }
+
+    error_t to_ijk_at_resolution(const ijk& fijk_higher_res, const resolution_t res_higher, const resolution_t res_lower,
+                                 coordinate::ijk& out_ijk_lower_res) noexcept
+    {
+        // To convert from a high-res IJK to a low-res IJK, we can't just scale.
+        // The most robust way is to convert the high-res FaceIJK to a 3D vector,
+        // then re-project that vector onto the same face and convert it back to IJK
+        // at the desired *lower* resolution.
+
+        // 1. Convert the high-resolution FaceIJK to a 3D vector.
+        math::vector3d v3d;
+        if (projection::face_ijk_to_v3d(fijk_higher_res, res_higher, v3d) != error_t::none)
+            return error_t::failed;
+
+        // 2. Project that 3D vector onto the same face's 2D gnomonic plane.
+        math::vector2d uv;
+        if (projection::project_v3d_to_face_uv(v3d, fijk_higher_res.face, uv) != error_t::none)
+            return error_t::failed;
+
+        // 3. Convert the 2D UV coordinates to an IJK grid at the desired *lower* resolution.
+        return projection::convert_face_uv_to_ijk(uv, res_lower, out_ijk_lower_res);
+    }
+
+    /// @brief Rotations to apply when moving from a pentagon to a neighboring face.
+    /// @details This is a port of `PENTAGON_ROTATIONS` from H3's `pentagon.c`.
+    static constexpr std::array<std::int8_t, cell::pentagon::count> pentagon_leading_digit_rotations = {1, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 2};
+
+    /// @brief Standard face-to-face rotations for hexagon-to-hexagon overage.
+    /// @details Port of `adjFaceRotations` from H3's `faceijk.c`.
+    static constexpr std::array<std::array<int, 3u>, count> adj_face_rotations = {
+        {{3, 0, 0}, {0, 0, 3}, {0, 3, 0}, {0, 0, 3}, {0, 3, 0}, {3, 0, 0}, {0, 0, 3}, {0, 3, 0}, {0, 0, 3}, {3, 0, 0},
+         {3, 0, 0}, {0, 3, 0}, {3, 0, 0}, {0, 3, 0}, {0, 0, 3}, {0, 0, 3}, {3, 0, 0}, {0, 3, 0}, {3, 0, 0}, {0, 3, 0}}};
+
+    /// @brief Standard face-to-face coordinate translations for hexagon-to-hexagon overage.
+    /// @details Port of `adjFaceOffsets` from H3's `faceijk.c`.
+    static constexpr std::array<std::array<pseudo_ijk, 3u>, count> adj_face_offsets {{
+        {{{1, 1, 0}, {2, 0, 0}, {1, 0, 1}}}, // Face 0
+        {{{0, 0, 1}, {0, 1, 1}, {1, 1, 0}}}, // Face 1
+        {{{0, 1, 0}, {1, 1, 0}, {0, 0, 1}}}, // Face 2
+        {{{1, 0, 1}, {0, 0, 1}, {1, 1, 0}}}, // Face 3
+        {{{0, 1, 1}, {1, 0, 1}, {1, 0, 0}}}, // Face 4
+        {{{2, 0, 0}, {0, 1, 0}, {0, 1, 1}}}, // Face 5
+        {{{0, 1, 1}, {1, 1, 0}, {1, 0, 1}}}, // Face 6
+        {{{1, 0, 0}, {1, 1, 0}, {0, 1, 0}}}, // Face 7
+        {{{1, 0, 1}, {0, 1, 0}, {0, 1, 1}}}, // Face 8
+        {{{2, 0, 0}, {1, 0, 1}, {0, 1, 1}}}, // Face 9
+        {{{2, 0, 0}, {0, 1, 0}, {0, 0, 1}}}, // Face 10
+        {{{1, 0, 0}, {0, 1, 1}, {0, 1, 0}}}, // Face 11
+        {{{2, 0, 0}, {1, 0, 1}, {0, 1, 1}}}, // Face 12
+        {{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}}, // Face 13
+        {{{0, 1, 1}, {1, 1, 0}, {1, 0, 1}}}, // Face 14
+        {{{2, 0, 0}, {1, 1, 0}, {0, 0, 1}}}, // Face 15
+        {{{1, 0, 0}, {1, 0, 1}, {1, 1, 0}}}, // Face 16
+        {{{2, 0, 0}, {0, 1, 1}, {0, 0, 1}}}, // Face 17
+        {{{0, 1, 0}, {1, 1, 0}, {1, 0, 1}}}, // Face 18
+        {{{1, 0, 0}, {0, 1, 0}, {0, 1, 1}}}  // Face 19
+    }};
+
+    /// @brief Helper to find the local index of a vertex on a face's edge.
+    std::int8_t find_vertex_on_face(const id_t face, const std::int8_t vertex_to_find) noexcept
+    {
+        const auto& vertices = face_to_vertices[+face];
+        for (std::int8_t i {}; i < 3; ++i)
+            if (vertices[i] == vertex_to_find)
+                return i;
+
+        return -1; // Should not happen
+    }
+
+    /// @brief Adjusts FaceIJK coordinates when a grid traversal from a HEXAGON crosses an icosahedron face boundary.
+    /// @details This function handles the simpler, non-distorted case of face overage. It finds the
+    ///          neighboring base cell on the new face and calculates the required rotation to translate
+    ///          the IJK coordinates into the new face's system.
+    /// @note    This is a low-level helper, intended to be called by a higher-level neighbor-finding algorithm
+    ///          after it has detected an overage.
+    /// @param[in] fijk The original FaceIJK with orientation, before the overage was detected.
+    /// @param res The resolution of the traversal.
+    /// @param digit The direction of movement that caused the overage.
+    /// @param[out] out_fijk The resulting FaceIJK on the new face.
+    static error_t adjust_hexagon_overage(const oriented_ijk& fijk, const resolution_t res, const direction_t digit,
+                                          oriented_ijk& out_fijk) noexcept
+    {
+        // 1. Determine the base cell of the original coordinates.
+        cell::base::id_t base_cell_id;
+        int orientation; // We need the base cell's rotation.
+        error_t err = to_base_cell_and_orientation(fijk, res, base_cell_id, orientation);
+        if (err != error_t::none)
+            return err;
+
+        // This function must not be called for pentagons.
+        if (cell::pentagon::check(base_cell_id))
+            return error_t::pentagon; // Logic error: wrong function called.
+
+        // 2. Find the neighboring base cell in the direction of movement.
+        const cell::base::id_t new_base_cell_id = cell::base::neighbor_of(base_cell_id, digit);
+        if (new_base_cell_id == cell::base::invalid_index)
+            return error_t::failed; // Should not happen for a valid hexagon and direction.
+
+        // 3. Find the rotation adjustment required to move between these two base cells.
+        const auto& rotations = cell::base::rotations_60ccw(base_cell_id);
+        const int new_rotation = rotations[+digit];
+
+        // 4. Create the new FaceIJK on the new face.
+        // The new face is the home face of the new base cell.
+        static_cast<ijk&>(out_fijk) = home(new_base_cell_id);
+
+        // 5. The original coordinates need to be rotated into the new system.
+        out_fijk.ijk_coords = fijk.ijk_coords;
+        for (int i {}; i < new_rotation; ++i)
+            out_fijk.ijk_coords.rotate_60ccw();
+
+        // 6. The overall system rotation also accumulates this change.
+        out_fijk.ccw_rotations_60 = (fijk.ccw_rotations_60 + new_rotation + 6) % 6;
+        return error_t::none;
+    }
+
+    error_t find_neighbor_face_ijk(const oriented_ijk& start_fijk, const resolution_t res, const direction_t dir,
+                                   oriented_ijk& out_neighbor_fijk) noexcept
+    {
+        if ((dir == direction_t::center) || (dir == direction_t::invalid))
+            return error_t::domain; // Cannot find a neighbor in the center or an invalid direction.
+
+        // 1. Perform a naive translation in the current face's IJK system.
+        out_neighbor_fijk = start_fijk;
+        out_neighbor_fijk.ijk_coords += coordinate::to_ijk(dir);
+        out_neighbor_fijk.ijk_coords.normalize();
+
+        // 2. Check for "overage" - has the new coordinate spilled outside the current face's system?
+        // The maximum coordinate for a given resolution defines the boundary.
+        // This is equivalent to H3's `MAX_FACE_COORD`.
+        const auto max_coord = 3 * unsafe_ipow<int>(7, +res);
+
+        if ((std::abs(out_neighbor_fijk.ijk_coords.i) <= max_coord) && (std::abs(out_neighbor_fijk.ijk_coords.j) <= max_coord) &&
+            (std::abs(out_neighbor_fijk.ijk_coords.k) <= max_coord))
+            // No overage occurred. The neighbor is on the same face. We are done.
+            return error_t::none;
+
+        // 3. Overage occurred. The neighbor is on a new face. We must correct the coordinates.
+        // The type of correction depends on whether the *origin* cell is a pentagon or a hexagon.
+        const cell::base::id_t original_base_cell = to_base_cell(start_fijk, res);
+        if (original_base_cell == cell::base::invalid_index)
+            return error_t::cell_invalid; // Could not determine the base cell of the origin.
+
+        if (cell::pentagon::check(original_base_cell))
+            // Case A: The traversal originated from a pentagon.
+            // Use the complex pentagon-specific adjustment logic.
+            // This call will fix the `out_neighbor_fijk` in-place.
+            return adjust_overage(out_neighbor_fijk, res, dir);
+
+        // Case B: The traversal originated from a regular hexagon.
+        // Use the simpler hexagon-to-hexagon face crossing logic.
+        return adjust_hexagon_overage(start_fijk, res, dir, out_neighbor_fijk);
+    }
+
+    /// @brief H3 internal lookup table `pentagonDirectionFaces`.
+    /// @details This table is critical for grid traversal across icosahedron face
+    /// boundaries near pentagons. For a given pentagon (by its local 0-11 index)
+    /// and a neighbor direction, it provides the `FaceIJK` coordinates on the
+    /// adjacent face.
+    ///
+    /// The table is indexed by `[local_pentagon_index][+direction - 1]`.
+    /// The direction index maps as follows:
+    /// 0: k_axes, 1: j_axes, 2: jk_axes, 3: i_axes, 4: ik_axes, 5: ij_axes
+    static constexpr std::array<std::array<ijk, 6u>, cell::pentagon::count> pentagon_neighbor_faces {{
+        // P0 (BC 4, I-axes)
+        {{{{0, 0, 1}, id_t::f4},
+          {{0, 1, 0}, id_t::f3},
+          {{0, 1, 0}, id_t::f2},
+          {{0, 1, 0}, id_t::f1},
+          {{0, 1, 0}, id_t::f0},
+          {{1, 0, 0}, id_t::f5}}},
+        // P1 (BC 14, I-axes)
+        {{{{0, 0, 1}, id_t::f0},
+          {{0, 1, 0}, id_t::f5},
+          {{1, 0, 0}, id_t::f6},
+          {{0, 0, 1}, id_t::f2},
+          {{0, 1, 0}, id_t::f1},
+          {{1, 0, 0}, id_t::f10}}},
+        // P2 (BC 24, I-axes)
+        {{{{0, 0, 1}, id_t::f1},
+          {{0, 0, 1}, id_t::f6},
+          {{1, 0, 0}, id_t::f7},
+          {{0, 0, 1}, id_t::f3},
+          {{0, 1, 0}, id_t::f2},
+          {{1, 0, 0}, id_t::f0}}},
+        // P3 (BC 38, I-axes)
+        {{{{0, 0, 1}, id_t::f2},
+          {{0, 0, 1}, id_t::f7},
+          {{1, 0, 0}, id_t::f8},
+          {{0, 0, 1}, id_t::f4},
+          {{0, 1, 0}, id_t::f3},
+          {{1, 0, 0}, id_t::f1}}},
+        // P4 (BC 49, I-axes)
+        {{{{0, 0, 1}, id_t::f3},
+          {{0, 0, 1}, id_t::f8},
+          {{1, 0, 0}, id_t::f9},
+          {{0, 0, 1}, id_t::f0},
+          {{0, 1, 0}, id_t::f4},
+          {{1, 0, 0}, id_t::f2}}},
+        // P5 (BC 58, K-axes)
+        {{{{0, 1, 0}, id_t::f10},
+          {{0, 1, 0}, id_t::f9},
+          {{0, 0, 1}, id_t::f8},
+          {{0, 1, 0}, id_t::f7},
+          {{0, 1, 0}, id_t::f6},
+          {{1, 0, 0}, id_t::f11}}},
+        // P6 (BC 63, J-axes)
+        {{{{0, 0, 1}, id_t::f11},
+          {{0, 0, 1}, id_t::f5},
+          {{1, 0, 0}, id_t::f1},
+          {{1, 0, 0}, id_t::f2},
+          {{1, 0, 0}, id_t::f7},
+          {{1, 0, 0}, id_t::f15}}},
+        // P7 (BC 72, K-axes)
+        {{{{0, 1, 0}, id_t::f15},
+          {{0, 0, 1}, id_t::f6},
+          {{1, 0, 0}, id_t::f2},
+          {{1, 0, 0}, id_t::f3},
+          {{1, 0, 0}, id_t::f8},
+          {{1, 0, 0}, id_t::f12}}},
+        // P8 (BC 83, J-axes)
+        {{{{0, 0, 1}, id_t::f12},
+          {{0, 1, 0}, id_t::f7},
+          {{1, 0, 0}, id_t::f3},
+          {{1, 0, 0}, id_t::f4},
+          {{1, 0, 0}, id_t::f9},
+          {{1, 0, 0}, id_t::f16}}},
+        // P9 (BC 97, K-axes)
+        {{{{0, 1, 0}, id_t::f16},
+          {{0, 1, 0}, id_t::f8},
+          {{1, 0, 0}, id_t::f4},
+          {{1, 0, 0}, id_t::f0},
+          {{0, 1, 0}, id_t::f5},
+          {{1, 0, 0}, id_t::f13}}},
+        // P10 (BC 107, I-axes)
+        {{{{1, 0, 0}, id_t::f14},
+          {{0, 1, 0}, id_t::f13},
+          {{0, 0, 1}, id_t::f9},
+          {{0, 0, 1}, id_t::f5},
+          {{1, 0, 0}, id_t::f1},
+          {{1, 0, 0}, id_t::f18}}},
+        // P11 (BC 117, J-axes)
+        {{{{1, 0, 0}, id_t::f17},
+          {{0, 0, 1}, id_t::f18},
+          {{0, 0, 1}, id_t::f14},
+          {{0, 0, 1}, id_t::f10},
+          {{1, 0, 0}, id_t::f5},
+          {{0, 1, 0}, id_t::f19}}},
+    }};
+
+    /// @brief For a given pentagon and neighbor direction, gets the corresponding FaceIJK on the adjacent face.
+    /// @details This is essential for grid traversal algorithms that cross icosahedron face boundaries
+    /// originating from a pentagonal cell. A pentagon has only 5 neighbors; attempting to move in the
+    /// `ij_axes` direction is invalid and will return no result.
+    /// @param pentagon_no The local index of the pentagon (0-11).
+    /// @param direction The direction of movement away from the pentagon.
+    /// @return An optional containing the `FaceIJK` of the neighbor if the direction is valid for a pentagon,
+    /// otherwise `std::nullopt`.
+    std::optional<ijk> get_pentagon_face_ijk(const std::uint8_t pentagon_no, const direction_t direction) noexcept
+    {
+        // A pentagon's local index must be in the range [0, 11].
+        if (pentagon_no >= cell::pentagon::count)
+            return std::nullopt;
+
+        const auto dir_val = +direction;
+
+        // Valid neighbor directions for a pentagon are K, J, JK, I, IK (values 1-5).
+        // The `ij_axes` direction (6) is the "missing" neighbor.
+        // `center` (0) and `invalid` (7) are also not neighbor directions.
+        if (dir_val < +direction_t::k_axes || dir_val > +direction_t::ik_axes)
+            return {};
+
+        // The lookup table is 0-indexed by `direction - 1`.
+        const auto dir_idx = dir_val - 1u;
+
+        return pentagon_neighbor_faces[pentagon_no][dir_idx];
+    }
+
+    /// @ref _adjustOverageClassII and _adjustOverageClassIII (H3 C internal)
+    error_t adjust_overage(id_t& current_face, std::int8_t& current_ccw_rotations_60, coordinate::ijk& ijk_coords_to_adjust,
+                           const cell::base::id_t base_cell_id, const direction_t digit_moved) noexcept
+    {
+        // This function is only for handling pentagon-specific overage.
+        // It should only be called by a higher-level algorithm that has already
+        // determined an overage has occurred from a pentagon base cell.
+
+        if ((digit_moved == direction_t::center) || (digit_moved == direction_t::invalid))
+            return error_t::domain;
+
+        // Fast path: No special adjustment is needed if the base cell is not a pentagon.
+        // The calling function handles simple hexagon-to-hexagon face crossing.
+        if (!cell::pentagon::check(base_cell_id))
+            return error_t::none;
+
+        // The H3 algorithm for pentagon distortion is complex. It involves
+        // looking up pre-computed new face data and rotations.
+        const auto optional_local_pent_idx = cell::pentagon::get_index(base_cell_id);
+        if (!optional_local_pent_idx)
+            // This should be impossible if pentagon::check passed.
+            return error_t::cell_invalid;
+
+        // Find the adjacent face by looking up the result for moving from this
+        // pentagon in the specified direction.
+        const std::optional<ijk> new_face_data = get(static_cast<std::uint8_t>(*optional_local_pent_idx), digit_moved);
+        if (!new_face_data)
+            // Attempted to move into the "missing" neighbor of a pentagon.
+            return error_t::pentagon;
+
+        // Look up the required rotation for this specific face crossing.
+        // H3 has precomputed tables for this (`_pentagonCwOffset`).
+        const auto [cw_offset_face, cw_offset_rot] = cell::pentagon::clockwise_offsets(base_cell_id);
+
+        // Apply the pre-computed adjustment from the lookup tables.
+        current_face = new_face_data->face;
+
+        // The new coordinates are simply the coordinates on the new face's system.
+        // The H3 tables store these as simple unit vectors.
+        ijk_coords_to_adjust = new_face_data->ijk_coords;
+
+        // Update the system's rotation.
+        // A full circle is 6 rotations, so we use modulo arithmetic.
+        current_ccw_rotations_60 = (current_ccw_rotations_60 + cw_offset_rot + 6) % 6;
+        return error_t::none;
+    }
+
+    error_t adjust_overage(oriented_ijk& fijk, const resolution_t res, const direction_t digit) noexcept
+    {
+        // First, determine the base cell for the current FaceIJK coordinates.
+        cell::base::id_t base_cell_id;
+        int orientation; // Not used here, but required by the function
+
+        const error_t base_cell_err = to_base_cell_and_orientation(fijk, res, base_cell_id, orientation);
+        if (base_cell_err != error_t::none)
+            return base_cell_err;
+
+        // Now, delegate to the core "worker" function.
+        return adjust_overage(fijk.face, fijk.ccw_rotations_60, fijk.ijk_coords, base_cell_id, digit);
+    }
 }

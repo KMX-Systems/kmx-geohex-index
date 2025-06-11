@@ -14,99 +14,154 @@ namespace kmx::geohex::coordinate
     using vector2 = kmx::math::vector2d;
     using index_as_tuple = std::tuple<int, int, int>;
 
+    /// @brief Represents hexagonal grid coordinates in the IJK cube coordinate system.
+    /// @details In this system, i + j + k = 0 always holds for valid coordinates.
+    /// This property simplifies many grid algorithms like rotation and neighbor finding.
+    /// @ref CoordIJK
     class ijk: public ij
     {
     public:
+        // Type aliases are self-documenting.
         using span = std::span<ijk>;
         using vector = std::vector<ijk>;
 
+        // Defaulted special members are idiomatic and self-explanatory.
         constexpr ijk() noexcept = default;
         constexpr ijk(const ijk&) noexcept = default;
         constexpr ijk(ijk&&) noexcept = default;
+
+        /// @brief Constructs an IJK coordinate from its three integer components.
         constexpr ijk(const value i, const value j, const value k = 0) noexcept: ij(i, j), k(k) {}
+
+        /// @brief Constructs an IJK coordinate from a tuple of values.
         template <typename T>
         constexpr ijk(const std::tuple<T, T, T>& item): ij(std::get<0>(item), std::get<1u>(item)), k(std::get<2u>(item))
         {
         }
+
+        /// @brief Constructs an IJK coordinate from a C-style array.
         constexpr ijk(const value data[3u]) noexcept: ij(data), k(data[2u]) {}
+
+        /// @brief Constructs an IJK coordinate from an IJ coordinate pair and a k value.
         constexpr ijk(const ij& ij_item, const value k = 0) noexcept: ij(ij_item), k(k) {}
 
-        static ijk from_cube_round(const double i, const double j, const double k);
+        /// @brief Creates an IJK coordinate by rounding floating-point cube coordinates to the nearest integer center.
+        /// @details This is a factory method, as its logic is non-trivial.
+        /// @ref _ijkRound
+        [[nodiscard]] static ijk from_cube_round(double i, double j, double k) noexcept;
 
-        vector2 center() const noexcept;
+        /// @brief Calculates the 2D Cartesian coordinates of the hexagon's center.
+        /// @ref _ijkToHex2d
+        [[nodiscard]] vector2 center() const noexcept;
 
-        ijk operator+(const ijk& item) const noexcept;
-        ijk operator-(const ijk& item) const noexcept;
+        // Idiomatic operators are self-documenting.
+        [[nodiscard]] ijk operator+(const ijk& item) const noexcept;
+        [[nodiscard]] ijk operator-(const ijk& item) const noexcept;
+        [[nodiscard]] ijk operator*(int factor) const noexcept;
 
         constexpr ijk& operator=(const ijk&) noexcept = default;
         constexpr ijk& operator=(ijk&&) noexcept = default;
-
         constexpr bool operator==(const ijk&) const noexcept = default;
-        constexpr bool operator!=(const ijk&) const noexcept = default;
 
-        bool operator==(const index_as_tuple& item) const noexcept;
-        bool operator!=(const index_as_tuple& item) const noexcept;
+        /// @brief Checks if the IJK coordinates represent the origin (0, 0, 0).
+        [[nodiscard]] constexpr bool is_origin() const noexcept { return i == 0 && j == 0 && k == 0; }
 
+        /// @brief Scales this IJK coordinate in-place by a constant factor.
+        /// @ref _ijkScale
         void scale(int factor) noexcept;
-        ijk operator*(int factor) const noexcept;
-        void operator*=(int factor) noexcept { scale(factor); }
 
         void operator+=(const ijk& item) noexcept;
         void operator-=(const ijk& item) noexcept;
+        void operator*=(int factor) noexcept { scale(factor); }
 
-        bool normalize_could_overflow() noexcept;
+        /// @brief Adjusts IJK coordinates to the nearest valid cube coordinate center.
+        /// @details Ensures that i + j + k = 0.
+        /// @ref _ijkNormalize
         void normalize() noexcept;
-        direction_t to_digit() const noexcept;
-        bool up_ap7_checked() noexcept;
-        bool up_ap7r_checked() noexcept;
-        void up_ap7() noexcept;
-        void up_ap7r() noexcept;
-        void down_ap7() noexcept;
-        void down_ap7r() noexcept;
-        void down_ap3() noexcept;
-        void down_ap3r() noexcept;
-        void to_neighbor(const direction_t digit);
-        ijk neighbor(const direction_t digit) const;
-        void rotate_60ccw() noexcept;
-        void rotate_60cw() noexcept;
-        int distance_to(const ijk& b) const noexcept;
-        void to_ij(ij& ij) const noexcept;
-        bool from_ij(const ijk& ij) noexcept;
-        void to_cube() noexcept;
-        void from_cube() noexcept;
 
-        value scalar_sum() const noexcept;
+        /// @brief Converts a canonical unit IJK vector to its corresponding direction digit (0-6).
+        /// @details This function normalizes a copy of the coordinate and then finds which of the
+        /// 7 canonical direction vectors it matches. It will return `direction_t::invalid`
+        /// for non-unit vectors.
+        /// @ref _unitIjkToDigit
+        [[nodiscard]] direction_t to_digit() const noexcept;
+
+        /// @brief Moves coordinates to the parent cell in a Class II resolution grid (aperture 7).
+        /// @ref _upAp7
+        void up_ap7() noexcept;
+
+        /// @brief Moves coordinates to the parent cell in a Class III resolution grid (aperture 7, rotated).
+        /// @ref _upAp7r
+        void up_ap7r() noexcept;
+
+        /// @brief Moves coordinates to the child cell center in a Class II grid.
+        /// @ref _downAp7
+        void down_ap7() noexcept;
+
+        /// @brief Moves coordinates to the child cell center in a Class III grid.
+        /// @ref _downAp7r
+        void down_ap7r() noexcept;
+
+        /// @brief Returns a copy of this coordinate moved to a finer resolution grid.
+        [[nodiscard]] ijk down_ap7(bool is_class_3) const noexcept;
+
+        /// @brief Returns a copy of this coordinate moved to a coarser resolution grid.
+        [[nodiscard]] ijk up_ap7_copy(bool is_class_3) const noexcept;
+
+        /// @brief Moves this coordinate to a neighboring cell in a given direction.
+        /// @ref _ijkNeighbor
+        void to_neighbor(direction_t digit) noexcept;
+
+        /// @brief Returns the neighboring cell's coordinates in a given direction.
+        [[nodiscard]] ijk neighbor(direction_t digit) const noexcept;
+
+        /// @brief Rotates the coordinates 60 degrees counter-clockwise around the origin.
+        /// @ref _ijkRotate60ccw
+        void rotate_60ccw() noexcept;
+
+        /// @brief Rotates the coordinates 60 degrees clockwise around the origin.
+        /// @ref _ijkRotate60cw
+        void rotate_60cw() noexcept;
+
+        /// @brief Calculates the grid distance between two IJK coordinates.
+        /// @ref ijkDistance
+        [[nodiscard]] int distance_to(const ijk& b) const noexcept;
+
+        /// @brief Determines the leading non-zero direction digit for this coordinate at a given resolution.
+        /// @ref _h3LeadingNonZeroDigit
+        [[nodiscard]] direction_t leading_digit(resolution_t res) const noexcept;
 
         value k;
-
-    private:
-        void transform(ijk i_vec, ijk j_vec, ijk k_vec) noexcept;
     };
 
+    /// @brief Creates a unit IJK vector for a given direction.
+    /// @ref _neighbor
     constexpr ijk to_ijk(const direction_t direction) noexcept
     {
-        using tuple = std::tuple<int8_t, int8_t, int8_t>;
-
-        static constexpr std::array<tuple, direction_count> data {{
-            {0, 0, 0}, // direction 0
-            {0, 0, 1}, // direction 1
-            {0, 1, 0}, // direction 2
-
-            {0, 1, 1}, // direction 3
-            {1, 0, 0}, // direction 4
-            {1, 0, 1}, // direction 5
-
-            {1, 1, 0}, // direction 6
+        // This table maps directions to their corresponding unit vectors in IJK space.
+        static constexpr std::array<ijk, direction_count> data {{
+            {0, 0, 0}, // 0: Center
+            {0, 0, 1}, // 1: K
+            {0, 1, 0}, // 2: J
+            {0, 1, 1}, // 3: JK
+            {1, 0, 0}, // 4: I
+            {1, 0, 1}, // 5: IK
+            {1, 1, 0}  // 6: IJ
         }};
 
-        return {data[+direction]};
+        // Adding a bounds check for safety in a constexpr context
+        if (+direction >= direction_count)
+            return {};
+
+        return data[+direction];
     }
 
+    /// @brief Converts IJK coordinates to a 2D Cartesian vector (axial coordinates).
     /// @ref _ijkToHex2d
     template <typename T>
     constexpr math::vector2<T> to_vec2(const ijk& coord) noexcept
     {
-        return {static_cast<T>(coord.i - coord.k) - T(0.5) * static_cast<T>(coord.j - coord.k),
-                static_cast<T>(coord.j - coord.k) * sqrt3_2};
+        const auto v = static_cast<T>(coord.j - coord.k);
+        return {static_cast<T>(coord.i - coord.k) - T(0.5) * v, v * sqrt3_2};
     }
 }
