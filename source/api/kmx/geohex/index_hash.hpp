@@ -2,7 +2,6 @@
 #pragma once
 #ifndef PCH
     #include <kmx/geohex/index.hpp>
-    #include <unordered_map>
 #endif
 
 namespace std
