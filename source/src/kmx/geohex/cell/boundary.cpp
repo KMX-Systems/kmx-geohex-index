@@ -13,7 +13,7 @@ namespace kmx::geohex::cell::boundary
     ///
     /// The vertex directions are ordered to produce a clockwise polygon boundary.
     /// @ref H3 C library constant `VERTEX_DIRECTIONS`.
-    static constexpr std::array<std::array<coordinate::ijk, 6u>, 2u> vertex_directions = {
+    static constexpr std::array<std::array<pseudo_ijk, direction_count - 1u>, 2u> vertex_directions = {
         {// Class II (even resolutions) vertex sequence.
          // Directions: J, IJ, I, IK, K, JK
          {{{0, 1, -1}, {1, 1, -2}, {1, 0, -1}, {2, -1, -1}, {1, -1, 0}, {1, -2, 1}}},

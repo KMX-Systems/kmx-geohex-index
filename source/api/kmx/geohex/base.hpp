@@ -39,6 +39,8 @@ namespace kmx::geohex
         class ijk;
     }
 
+    using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
+
     enum class index_mode_t : std::uint8_t
     {
         invalid,
@@ -150,7 +152,7 @@ namespace kmx::geohex
         k_out = rk;
     }
 
-    double scaling_factor(const resolution_t resolution);
+    double scaling_factor(const resolution_t resolution) noexcept;
 
     /// @brief Converts degrees to radians.
     /// @param degrees Angle in degrees.

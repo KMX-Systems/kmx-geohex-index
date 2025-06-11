@@ -3,7 +3,6 @@
 #include "kmx/geohex/cell/base.hpp"
 #include "kmx/geohex/cell/boundary.hpp"
 #include "kmx/geohex/geo_projection.hpp"
-#include <algorithm>
 #include <array>
 
 namespace kmx::geohex::icosahedron::face
@@ -133,12 +132,12 @@ namespace kmx::geohex::icosahedron::face
         id_t::f18, // base cell 121
     };
 
-    constexpr id_t internal_of(const cell::base::id_t base_cell_id)
+    constexpr id_t internal_of(const cell::base::id_t base_cell_id) noexcept
     {
         return face_data[base_cell_id];
     }
 
-    id_t of(const cell::base::id_t base_cell_id)
+    id_t of(const cell::base::id_t base_cell_id) noexcept
     {
         return internal_of(base_cell_id);
     }
@@ -301,8 +300,6 @@ namespace kmx::geohex::icosahedron::face
         return best_face;
     }
 
-    using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
-
     static constexpr std::uint8_t unique_ijk_instances = 8u;
 
     static constexpr std::array<pseudo_ijk, unique_ijk_instances> unique_pseudo_ijk_array {
@@ -447,7 +444,7 @@ namespace kmx::geohex::icosahedron::face
         {4u, id_t::f18}, // base cell 121: {1, 0, 0}
     }};
 
-    ijk home(const cell::base::id_t base_id)
+    ijk home(const cell::base::id_t base_id) noexcept
     {
         const auto& item = home_fijk_array[+base_id];
         return {coordinate::ijk {unique_pseudo_ijk_array[item.index]}, item.face};
@@ -1003,27 +1000,25 @@ namespace kmx::geohex::icosahedron::face
         fijk_oriented.ijk_coords = fijk.ijk_coords;
         fijk_oriented.ccw_rotations_60 = {};
 
+        auto& ijk_coords = fijk_oriented.ijk_coords;
+
         // Ascend the grid from the cell's resolution up to resolution 0.
         for (resolution_t r = res; +r > 0u; r = static_cast<resolution_t>(+r - 1u))
         {
-            coordinate::ijk last_ijk = fijk_oriented.ijk_coords;
+            coordinate::ijk last_ijk = ijk_coords;
             if (is_class_3(r))
-            {
-                fijk_oriented.ijk_coords.up_ap7r();
-            }
+                ijk_coords.up_ap7r();
             else
-            {
-                fijk_oriented.ijk_coords.up_ap7();
-            }
+                ijk_coords.up_ap7();
 
-            coordinate::ijk diff = last_ijk - fijk_oriented.ijk_coords;
+            coordinate::ijk diff = last_ijk - ijk_coords;
             diff.scale(is_class_3(r) ? 3 : 7);
             coordinate::ijk rotated_parent_ijk = last_ijk - diff;
 
-            if (fijk_oriented.ijk_coords != rotated_parent_ijk)
+            if (ijk_coords != rotated_parent_ijk)
             {
-                coordinate::ijk tmp = fijk_oriented.ijk_coords;
-                int rotations = 0;
+                coordinate::ijk tmp = ijk_coords;
+                int rotations {};
                 while (tmp != rotated_parent_ijk)
                 {
                     tmp.rotate_60ccw();
@@ -1057,7 +1052,7 @@ namespace kmx::geohex::icosahedron::face
     cell::base::id_t to_base_cell(const ijk& fijk, const resolution_t res) noexcept
     {
         cell::base::id_t base_cell = cell::base::invalid_index;
-        int orientation = 0;
+        int orientation {};
         if (to_base_cell_and_orientation(fijk, res, base_cell, orientation) == error_t::none)
             return base_cell;
 

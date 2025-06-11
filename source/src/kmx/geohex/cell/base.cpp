@@ -5,7 +5,7 @@ namespace kmx::geohex::cell::base
 {
     using index_array_array_t = std::array<base_id_array_t, count>;
 
-    static constexpr index_array_array_t data {{
+    static constexpr index_array_array_t neighbor_data {{
         {0u, 1u, 5u, 2u, 4u, 3u, 8u},                        // base cell 0
         {1u, 7u, 6u, 9u, 0u, 3u, 2u},                        // base cell 1
         {2u, 6u, 10u, 11u, 0u, 1u, 5u},                      // base cell 2
@@ -132,7 +132,7 @@ namespace kmx::geohex::cell::base
 
     id_t neighbor_of(const id_t item, const direction_t direction)
     {
-        return data[item][+direction];
+        return neighbor_data[item][+direction];
     }
 
     direction_t direction_between(const id_t origin, const id_t neightbor)
@@ -275,7 +275,7 @@ namespace kmx::geohex::cell::base
         {0, 0, 1, 0, 1, 5, 1},  // base cell 121
     }};
 
-    const rotations_60ccw_per_direction_array& rotations_60ccw(const id_t base_cell_id)
+    const rotations_60ccw_per_direction_array& rotations_60ccw(const id_t base_cell_id) noexcept
     {
         return rotations_60ccw_data[base_cell_id];
     }

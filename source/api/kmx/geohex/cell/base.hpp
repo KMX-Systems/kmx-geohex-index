@@ -37,10 +37,10 @@ namespace kmx::geohex::cell::base
         return (item == 4u) || (item == 117u);
     }
 
-    using rotations_60ccw_per_direction_array = std::array<std::int8_t, 7u>;
+    using rotations_60ccw_per_direction_array = std::array<std::int8_t, direction_count>;
 
     /// @ref baseCellNeighbor60CCWRots
-    const rotations_60ccw_per_direction_array& rotations_60ccw(const id_t base_cell_id);
+    const rotations_60ccw_per_direction_array& rotations_60ccw(const id_t base_cell_id) noexcept;
 
     /// @brief Gets the canonical counter-clockwise rotation of a base cell relative to its face.
     /// @ref baseCellData

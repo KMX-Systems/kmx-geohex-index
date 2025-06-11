@@ -59,7 +59,7 @@ namespace kmx::geohex::icosahedron::face
     /// @ref NUM_ICOSA_FACES
     constexpr no_t count = +id_t::f19 + 1u;
 
-    id_t of(const cell::base::id_t base_cell_id);
+    id_t of(const cell::base::id_t base_cell_id) noexcept;
 
     bool is_cw_offset(const cell::base::id_t base_cell_id, const id_t face) noexcept;
 
@@ -84,7 +84,7 @@ namespace kmx::geohex::icosahedron::face
         constexpr bool operator!=(const ijk&) const noexcept = default;
     };
 
-    ijk home(const cell::base::id_t base_id);
+    ijk home(const cell::base::id_t base_id) noexcept;
 
     /// @brief Represents a coordinate on a specific icosahedron face with orientation.
     /// @note This is analogous to H3 C's internal `FaceOrientIJK` struct.
