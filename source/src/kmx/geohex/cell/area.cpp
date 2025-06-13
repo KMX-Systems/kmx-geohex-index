@@ -1,4 +1,5 @@
-/// @file geohex/cell/area.cpp
+/// @file src/kmx/geohex/cell/area.cpp
+/// @ingroup Internal
 #include "kmx/geohex/cell/area.hpp"
 #include "kmx/geohex/cell/boundary.hpp"
 #include <array>

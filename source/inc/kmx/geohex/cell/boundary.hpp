@@ -1,7 +1,7 @@
-/// @file geohex/cell/boundary.hpp
+/// @file inc/kmx/geohex/cell/boundary.hpp
+/// @ingroup Internal
 #pragma once
 #ifndef PCH
-    #include <kmx/geohex/base.hpp>
     #include <kmx/geohex/index.hpp>
 #endif
 
@@ -17,8 +17,6 @@ namespace kmx::geohex::icosahedron::face
 
 namespace kmx::geohex::cell::boundary
 {
-    constexpr std::uint8_t max_vertices = 10u;
-
     error_t get(const index index, std::span<gis::wgs84::coordinate>& out) noexcept;
 
     /// @ref _faceIjkToCellBoundary and _faceIjkPentToCellBoundary (H3 C internal)

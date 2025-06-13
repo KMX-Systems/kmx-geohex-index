@@ -1,4 +1,5 @@
-/// @file geohex/cell/boundary.cpp
+/// @file src/kmx/geohex/cell/boundary.cpp
+/// @ingroup Internal
 #include "kmx/geohex/cell/boundary.hpp"
 #include "kmx/geohex/icosahedron/face.hpp"
 #include <array>

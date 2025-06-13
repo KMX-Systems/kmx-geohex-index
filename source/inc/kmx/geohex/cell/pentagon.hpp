@@ -1,9 +1,11 @@
-/// @file geohex/cell/pentagon.hpp
+/// @file inc/kmx/geohex/cell/pentagon.hpp
+/// @ingroup Internal
 #pragma once
 #ifndef PCH
     #include <bitset>
     #include <kmx/geohex/cell.hpp>
     #include <kmx/geohex/cell/base.hpp>
+    #include <kmx/geohex/coordinate/ijk.hpp>
     #include <kmx/geohex/icosahedron/face.hpp>
     #include <kmx/geohex/index.hpp>
     #include <kmx/unsafe_ipow.hpp>

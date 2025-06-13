@@ -1,247 +1,213 @@
-/// @file geohex/index.cpp
+/// @file src/kmx/geohex/index.cpp
+/// @ingroup Internal
 #include "kmx/geohex/index.hpp"
-#include "kmx/geohex/cell/pentagon.hpp"
-#include <algorithm>
+#include "kmx/geohex/cell/area.hpp"
+#include "kmx/geohex/cell/boundary.hpp"
+#include "kmx/geohex/index_helper.hpp"
+#include <algorithm> // For std::transform
+#include <charconv>
+#include <cstdio>
 
 namespace kmx::geohex
 {
-    index::index(const value_t item) noexcept
-    {
-        static_cast<void>(operator=(item));
-    }
-
-    bool index::has_good_top_bits(const value_t h) noexcept
-    {
-        const auto hh = (h >> 56u);
-        return hh == 0b1000;
-    }
-
-    bool index::has_any_7_up_to_resolution(const value_t h, const resolution_t res) noexcept
-    {
-        static constexpr std::uint64_t mhi = 0b100100100100100100100100100100100100100100100;
-        static constexpr std::uint64_t mlo = mhi >> 2u;
-
-        const auto shift = 3u * (15u - +res);
-        const auto hh = (h >> shift) << shift;
-        const auto result = (hh & mhi & (~hh - mlo));
-        return result != 0u;
-    }
-
-    bool index::has_all_7_after_resolution(const value_t h, const resolution_t ress) noexcept
-    {
-        // NOTE: res check is needed because we can't shift by 64
-        const auto res = +ress;
-        if (res < resolution_count)
-        {
-            const auto shift = 19u + 3u * res;
-            const auto hh = ~h;
-            const auto rr = (hh << shift) >> shift;
-            return rr == 0u;
-        }
-
-        return true;
-    }
-
-    uint32_t index::first_one_index(const value_t h) noexcept
-    {
-#if defined(__GNUC__) || defined(__clang__)
-        return 63u - __builtin_clzll(h);
-#elif defined(_MSC_VER) && defined(_M_X64) // doesn't work on win32
-        uint32_t index;
-        _BitScanReverse64(&index, h);
-        return static_cast<uint32_t>(index);
-#else
-        // Portable fallback
-        uint32_t pos = 63 - 19;
-        H3Index m = 1;
-        while ((h & (m << pos)) == 0)
-            pos--;
-        return pos;
-#endif
-    }
-
-    bool index::has_deleted_subsequence(const value_t h, cell::base::id_t base_cell)
-    {
-        if (cell::pentagon::check(base_cell))
-        {
-            const auto hh = (h << 19u) >> 19u;
-            if (hh == 0u)
-                return false; // all zeros: res 15 pentagon
-            return (first_one_index(h) % 3u) == 0u;
-        }
-
-        return false;
-    }
+    // --- Properties ---
 
     bool index::is_valid() const noexcept
     {
-        const auto v = value();
-        return has_good_top_bits(v) && (base_cell_ < cell::base::count) && has_any_7_up_to_resolution(v, resolution()) &&
-               !has_deleted_subsequence(v, base_cell_);
+        return index_helper {value_}.is_valid();
     }
 
     bool index::is_pentagon() const noexcept
     {
-        return cell::pentagon::check(base_cell()) && (leading_non_zero_digit() == direction_t::center);
+        return index_helper {value_}.is_pentagon();
     }
 
     index_mode_t index::mode() const noexcept
     {
-        return static_cast<index_mode_t>(mode_);
+        return index_helper {value_}.mode();
     }
 
     void index::set_mode(const index_mode_t item) noexcept
     {
-        static constexpr cell::base::id_t mask = (1u << field_mode_size) - 1u;
-        mode_ = +item & mask;
+        index_helper helper {value_};
+        helper.set_mode(item);
+        value_ = helper.value();
     }
 
     resolution_t index::resolution() const noexcept
     {
-        return static_cast<resolution_t>(resolution_);
+        return index_helper {value_}.resolution();
     }
 
     void index::set_resolution(const resolution_t item) noexcept
     {
-        static constexpr cell::base::id_t mask = (1u << field_resolution_count) - 1u;
-        resolution_ = +item & mask;
+        index_helper helper {value_};
+        helper.set_resolution(item);
+        value_ = helper.value();
     }
 
     cell::base::id_t index::base_cell() const noexcept
     {
-        return static_cast<cell::base::id_t>(base_cell_);
+        return index_helper {value_}.base_cell();
     }
 
     void index::set_base_cell(const cell::base::id_t item) noexcept
     {
-        static constexpr cell::base::id_t mask = (1u << field_base_cell_size) - 1u;
-        base_cell_ = item & mask;
+        index_helper helper {value_};
+        helper.set_base_cell(item);
+        value_ = helper.value();
     }
 
-    index::value_t index::value() const noexcept
-    {
-        return reinterpret_cast<const value_t&>(*this);
-    }
+    // --- Digit Manipulation ---
 
-    void index::set_value(const value_t item) noexcept
+    digit_t index::digit(const digit_index index) const noexcept
     {
-        reinterpret_cast<value_t&>(*this) = item;
-    }
-
-    index::value_t index::operator()() const noexcept
-    {
-        return value();
-    }
-
-    index::operator value_t() const noexcept
-    {
-        return value();
-    }
-
-    void index::operator=(const value_t item) noexcept
-    {
-        set_value(item);
-    }
-
-    bool index::operator<(const index& item) const noexcept
-    {
-        return value() < item.value();
-    }
-
-    bool index::operator<=(const index& item) const noexcept
-    {
-        return value() <= item.value();
-    }
-
-    bool index::operator>(const index& item) const noexcept
-    {
-        return value() > item.value();
-    }
-
-    bool index::operator>=(const index& item) const noexcept
-    {
-        return value() >= item.value();
-    }
-
-    bool index::operator==(const index& item) const noexcept
-    {
-        return value() == item.value();
-    }
-
-    bool index::operator!=(const index& item) const noexcept
-    {
-        return value() != item.value();
-    }
-
-    index::digit_t index::raw_digit(const digit_index index) const noexcept
-    {
-        return static_cast<digit_t>((value() >> shift(index)) & digit_mask);
-    }
-
-    index::digit_t index::digit(const digit_index index) const noexcept
-    {
-        return (index < digit_count()) ? raw_digit(index) : 0U;
+        return index_helper {value_}.digit(index);
     }
 
     void index::set_digit(const digit_index index, const digit_t item) noexcept
     {
-        if (index < digit_count())
-        {
-            const auto shift_value = shift(index);
-            const auto new_data = (value() & (~digit_mask << shift_value)) | ((item & digit_mask) << shift_value);
-            set_value(new_data);
-        }
+        index_helper helper {value_};
+        helper.set_digit(index, item);
+        value_ = helper.value();
     }
 
     bool index::set_digits_to_zero(const digit_index start, const digit_index end) noexcept
     {
-        if ((start < digit_count()) && (end <= digit_count()))
-        {
-            auto d = ~digits_;
-            d <<= digit_size * (end - start + 1u);
-            d = ~d;
-            d <<= digit_size * (resolution_count - end);
-            digits_ = ~d;
-            return true;
-        }
-
-        return {};
+        index_helper helper {value_};
+        const bool result = helper.set_digits_to_zero(start, end);
+        value_ = helper.value();
+        return result;
     }
 
     direction_t index::leading_non_zero_digit() const noexcept
     {
-        const auto count = static_cast<digit_index>(resolution_);
-        for (digit_index i {}; i != count; ++i)
-        {
-            const auto digit = raw_digit(i);
-            if (digit != 0)
-                return static_cast<direction_t>(digit);
-        }
-
-        return direction_t::center;
+        return index_helper {value_}.leading_non_zero_digit();
     }
 
     void index::get_number(number_span& span) const noexcept
     {
-        auto dest = span.begin();
-        const auto max_count = std::min<digit_index>(span.size(), digit_count());
-        for (digit_index i {}; i != max_count; ++i, ++dest)
-            *dest = static_cast<char>('0' + raw_digit(i));
+        const index_helper helper {value_};
+        for (digit_index i = 0; i < digit_count(); ++i)
+            span[i] = static_cast<char>('0' + helper.digit(i));
+        span[digit_count()] = '\0';
     }
 
-    error_t to_wgs(const index index, gis::wgs84::coordinate& coord) noexcept
+    // --- Geographic Functions ---
+
+    error_t index::get_area_km2(double& out_area) const noexcept
     {
-        if (!index.is_valid())
-            return error_t::cell_invalid;
-
-        // Convert the H3 index to its FaceIJK representation.
-        icosahedron::face::ijk fijk;
-        const error_t err = icosahedron::face::from_index(index, fijk);
-        if (err != error_t::none)
-            return err;
-
-        // Convert the FaceIJK coordinates to geographic coordinates.
-        // return icosahedron::face::to_geo(fijk, index.resolution(), coord);
-        return icosahedron::face::to_wgs(fijk, index.resolution(), coord);
+        return cell::area::km2(*this, out_area);
     }
-}
+
+    error_t index::get_area_m2(double& out_area) const noexcept
+    {
+        return cell::area::m2(*this, out_area);
+    }
+
+    error_t index::get_boundary(std::span<wgs_coord>& out) const noexcept
+    {
+        return cell::boundary::get(*this, out);
+    }
+
+    error_t index::to_wgs(wgs_coord& out_coord) const noexcept
+    {
+        return geohex::to_wgs(value_, out_coord);
+    }
+
+    [[nodiscard]] index index::from_wgs(const wgs_coord& coord, const resolution_t res) noexcept
+    {
+        return index {geohex::from_wgs(coord, res)};
+    }
+
+    // --- Hierarchy Functions ---
+
+    std::uint64_t index::children_count(const resolution_t child_resolution) const noexcept
+    {
+        return geohex::children_count(value_, child_resolution);
+    }
+
+    error_t index::get_children(const resolution_t child_resolution, std::span<index>& out_children) const noexcept
+    {
+        // 1. Determine the exact number of children this cell will have.
+        const auto required_size = this->children_count(child_resolution);
+
+        // 2. Validate that the caller's buffer is large enough. This is the core
+        //    safety check of the span-based design.
+        if (out_children.size() < required_size)
+            return error_t::buffer_too_small;
+
+        // 3. Create a span of raw_index_t that points to the same memory as the
+        //    caller's span<index>. This is a highly efficient cast that avoids
+        //    any copying, possible because `index` is a standard-layout class
+        //    wrapping a single raw_index_t.
+        std::span<raw_index_t> raw_children_span(reinterpret_cast<raw_index_t*>(out_children.data()), out_children.size());
+
+        // 4. Call the internal worker function to do the actual calculation.
+        //    This function will fill the buffer and resize the raw_children_span.
+        const error_t err = geohex::get_children(value_, child_resolution, raw_children_span);
+
+        // 5. If the internal function succeeded, resize the original caller's span
+        //    to match the number of children that were actually written.
+        if (err == error_t::none)
+            out_children = out_children.subspan(0, raw_children_span.size());
+
+        return err;
+    }
+
+    index index::get_parent(const resolution_t parent_resolution) const noexcept
+    {
+        return index {geohex::get_parent(value_, parent_resolution)};
+    }
+
+    error_t index::to_string(index idx, std::span<char>& out_buffer) noexcept
+    {
+        // 1. Validate the output buffer size.
+        if (out_buffer.size() < max_hex_string_buffer_size)
+        {
+            return error_t::buffer_too_small;
+        }
+
+        // 2. Use snprintf for safe, fast, and standard-compliant formatting.
+        // It's often faster than iostreams and guarantees null termination.
+        // The format specifier "%llx" is for an unsigned long long (uint64_t).
+        const int chars_written = std::snprintf(out_buffer.data(), out_buffer.size(), "%llx", idx.value());
+
+        // 3. Check for encoding errors.
+        if (chars_written < 0 || static_cast<size_t>(chars_written) >= out_buffer.size())
+        {
+            // Encoding error or truncation occurred. Clear the buffer to be safe.
+            out_buffer.front() = '\0';
+            out_buffer = out_buffer.subspan(0, 0);
+            return error_t::failed;
+        }
+
+        // 4. Update the caller's span to reflect the actual number of characters written.
+        out_buffer = out_buffer.subspan(0, static_cast<size_t>(chars_written));
+
+        return error_t::none;
+    }
+
+    [[nodiscard]] index index::from_string(std::string_view str) noexcept
+    {
+        // 1. Basic validation. An H3 string cannot be empty or too long.
+        if (str.empty() || str.length() > max_hex_string_length)
+        {
+            return index {0};
+        }
+
+        // 2. Use std::from_chars for non-allocating, non-throwing parsing.
+        index::value_t value = 0;
+        auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value, 16);
+
+        // 3. Check for successful parsing.
+        // The entire string must be consumed (ptr == end) and there must be no error.
+        if (ec == std::errc() && ptr == str.data() + str.size())
+        {
+            return index {value};
+        }
+
+        // 4. If parsing failed, return an invalid index.
+        return index {0};
+    }
+} // namespace kmx::geohex

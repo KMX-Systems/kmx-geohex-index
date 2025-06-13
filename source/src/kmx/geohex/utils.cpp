@@ -1,5 +1,6 @@
-/// @file geohex/base.cpp
-#include "kmx/geohex/base.hpp"
+/// @file src/kmx/geohex/utils.cpp
+/// @ingroup Internal
+#include "kmx/geohex/utils.hpp"
 #include <array>
 
 namespace kmx::geohex
@@ -8,7 +9,7 @@ namespace kmx::geohex
     {
         /// @ref UNIT_VEC_SCALES
         static constexpr std::array<double, resolution_count> data {
-            0.3629383840444699,  // res 0
+            0.36293838404446990, // res 0
             0.13714663375085900, // res 1
             0.05182828247323050, // res 2
             0.01958407039253940, // res 3

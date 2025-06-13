@@ -1,4 +1,5 @@
-/// @file geohex/cell.hpp
+/// @file inc/kmx/geohex/cell.hpp
+/// @ingroup Internal
 #pragma once
 #ifndef PCH
     #include <kmx/geohex/index.hpp>

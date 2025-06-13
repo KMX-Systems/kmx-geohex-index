@@ -1,8 +1,11 @@
-/// @file geohex/coordinate/ijk.hpp
+/// @file inc/kmx/geohex/coordinate/ijk.hpp
+/// @ingroup Internal
+/// @brief Defines the 3D (IJK) hexagonal cube coordinate class and related utilities.
 #pragma once
 #ifndef PCH
     #include <kmx/geohex/base.hpp>
     #include <kmx/geohex/coordinate/ij.hpp>
+    #include <kmx/geohex/utils.hpp>
     #include <kmx/math/vector.hpp>
     #include <span>
     #include <tuple>
@@ -164,4 +167,26 @@ namespace kmx::geohex::coordinate
         const auto v = static_cast<T>(coord.j - coord.k);
         return {static_cast<T>(coord.i - coord.k) - T(0.5) * v, v * sqrt3_2};
     }
+}
+namespace std
+{
+    /// @brief Hash specialization for ijk coordinates, used for map keys.
+    template <>
+    struct hash<kmx::geohex::coordinate::ijk>
+    {
+        std::size_t operator()(const kmx::geohex::coordinate::ijk& c) const noexcept
+        {
+#ifdef KMX_GEOHEX_SIMPLE_HASH
+            const std::size_t h1 = std::hash<decltype(c.i)> {}(c.i);
+            const std::size_t h2 = std::hash<decltype(c.j)> {}(c.j);
+            const std::size_t h3 = std::hash<decltype(c.k)> {}(c.k);
+            // Combine hashes using a standard technique to reduce collisions.
+            return h1 ^ (h2 << 1u) ^ (h3 << 2u);
+#else
+            std::size_t seed {};
+            kmx::hash_combine(seed, c);
+            return seed;
+#endif
+        }
+    };
 }

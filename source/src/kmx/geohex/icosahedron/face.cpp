@@ -1,8 +1,9 @@
-/// @file geohex/icosahedron/face.cpp
+/// @file src/kmx/geohex/icosahedron/face.cpp
+/// @ingroup Internal
 #include "kmx/geohex/icosahedron/face.hpp"
 #include "kmx/geohex/cell/base.hpp"
 #include "kmx/geohex/cell/boundary.hpp"
-#include "kmx/geohex/geo_projection.hpp"
+#include "kmx/geohex/projection.hpp"
 #include <array>
 
 namespace kmx::geohex::icosahedron::face
@@ -243,7 +244,7 @@ namespace kmx::geohex::icosahedron::face
         gis::wgs84::coordinate cell_center;
         // Assuming the index can provide its center coordinate. This is a common requirement.
         // A free function to_wgs(index, out) is also plausible.
-        const error_t center_err = to_wgs(index, cell_center);
+        const error_t center_err = index.to_wgs(cell_center);
         if (center_err != error_t::none)
         {
             output = {};
@@ -556,11 +557,11 @@ namespace kmx::geohex::icosahedron::face
         id_t center_face = from_wgs(coord);
 
         math::vector2d uv;
-        if (projection::project_v3d_to_face_uv(v3d, center_face, uv) != error_t::none)
+        if (projection::v3d_to_face_uv(v3d, center_face, uv) != error_t::none)
             return error_t::failed;
 
         coordinate::ijk center_ijk_coords;
-        if (projection::convert_face_uv_to_ijk(uv, res, center_ijk_coords) != error_t::none)
+        if (projection::face_uv_to_ijk(uv, res, center_ijk_coords) != error_t::none)
             return error_t::failed;
 
         const auto center_v2d = coordinate::to_vec2<double>(center_ijk_coords);
@@ -587,11 +588,11 @@ namespace kmx::geohex::icosahedron::face
                 checked_faces[+neighbor_face] = true;
 
                 math::vector2d neighbor_uv;
-                if (projection::project_v3d_to_face_uv(v3d, neighbor_face, neighbor_uv) != error_t::none)
+                if (projection::v3d_to_face_uv(v3d, neighbor_face, neighbor_uv) != error_t::none)
                     continue;
 
                 coordinate::ijk neighbor_ijk_coords;
-                projection::convert_face_uv_to_ijk(neighbor_uv, res, neighbor_ijk_coords);
+                projection::face_uv_to_ijk(neighbor_uv, res, neighbor_ijk_coords);
 
                 const auto neighbor_v2d = coordinate::to_vec2<double>(neighbor_ijk_coords);
                 const double dist_sq = hex2d_distance_sq(neighbor_uv, neighbor_v2d);
@@ -988,7 +989,7 @@ namespace kmx::geohex::icosahedron::face
         if (projection::face_ijk_to_v3d(fijk, res, v3d) != error_t::none)
             return error_t::failed;
 
-        projection::from_v3d(v3d, out_coord);
+        projection::to_wgs(v3d, out_coord);
         return error_t::none;
     }
 
@@ -1074,11 +1075,11 @@ namespace kmx::geohex::icosahedron::face
 
         // 2. Project that 3D vector onto the same face's 2D gnomonic plane.
         math::vector2d uv;
-        if (projection::project_v3d_to_face_uv(v3d, fijk_higher_res.face, uv) != error_t::none)
+        if (projection::v3d_to_face_uv(v3d, fijk_higher_res.face, uv) != error_t::none)
             return error_t::failed;
 
         // 3. Convert the 2D UV coordinates to an IJK grid at the desired *lower* resolution.
-        return projection::convert_face_uv_to_ijk(uv, res_lower, out_ijk_lower_res);
+        return projection::face_uv_to_ijk(uv, res_lower, out_ijk_lower_res);
     }
 
     /// @brief Rotations to apply when moving from a pentagon to a neighboring face.

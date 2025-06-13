@@ -1,12 +1,14 @@
-/// @file geohex/cell.cpp
-#include "kmx/geohex/geo_projection.hpp"
+/// @file src/kmx/geohex/projection.cpp
+/// @ingroup Internal
+#include "kmx/geohex/projection.hpp"
+#include "kmx/geohex/utils.hpp"
 #include <cmath>
 #include <limits>
 
 namespace kmx::geohex::projection
 {
     /// @ref _v3dToGeo (H3 C internal from algos.c)
-    void from_v3d(const math::vector3d& v3, gis::wgs84::coordinate& out_coord) noexcept
+    void to_wgs(const math::vector3d& v3, gis::wgs84::coordinate& out_coord) noexcept
     {
         out_coord.latitude = std::asin(v3.z); // Latitude is arcsin(z)
         constexpr auto epsilon = std::numeric_limits<double>::epsilon();
@@ -63,7 +65,7 @@ namespace kmx::geohex::projection
         return error_t::none;
     }
 
-    error_t convert_face_uv_to_ijk(const math::vector2d& raw_uv_on_face, const resolution_t res, coordinate::ijk& out_ijk) noexcept
+    error_t face_uv_to_ijk(const math::vector2d& raw_uv_on_face, const resolution_t res, coordinate::ijk& out_ijk) noexcept
     {
         math::vector2d processed_uv = raw_uv_on_face;
 
@@ -97,7 +99,7 @@ namespace kmx::geohex::projection
 
     /// @ref _v3dToFaceV2d
     /// @brief Projects a 3D point on the sphere to 2D UV coordinates on a specified face's plane.
-    error_t project_v3d_to_face_uv(const math::vector3d& v3d, const icosahedron::face::id_t face_num, math::vector2d& out_uv) noexcept
+    error_t v3d_to_face_uv(const math::vector3d& v3d, const icosahedron::face::id_t face_num, math::vector2d& out_uv) noexcept
     {
         // This is the inverse of face_ijk_to_v3d, performing a gnomonic projection.
         const auto face_center = icosahedron::face::center_point(face_num);

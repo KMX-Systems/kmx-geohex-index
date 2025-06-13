@@ -1,5 +1,7 @@
-/// @file geohex/coordinate/ijk.cpp
+/// @file src/kmx/geohex/coordinate/ijk.cpp
+/// @ingroup Internal
 #include "kmx/geohex/coordinate/ijk.hpp"
+#include "kmx/geohex/utils.hpp"
 #include <algorithm>
 #include <cmath>
 

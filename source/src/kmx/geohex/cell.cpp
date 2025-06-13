@@ -1,4 +1,5 @@
-/// @file geohex/cell.cpp
+/// @file src/kmx/geohex/cell.cpp
+/// @ingroup Internal
 #include "kmx/geohex/cell/pentagon.hpp"
 #include "kmx/geohex/index.hpp"
 #include <kmx/geohex/icosahedron/face.hpp>

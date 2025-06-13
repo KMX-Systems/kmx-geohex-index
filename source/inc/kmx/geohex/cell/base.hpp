@@ -1,4 +1,5 @@
-/// @file geohex/cell/base.hpp
+/// @file inc/kmx/geohex/cell/base.hpp
+/// @ingroup Internal
 #pragma once
 #ifndef PCH
     #include <array>
@@ -10,9 +11,6 @@ namespace kmx::geohex::cell::base
 {
     using id_t = std::uint8_t;
     using base_id_array_t = std::array<id_t, 8u>; // one extra item for padding
-
-    /// @ref res0CellCount
-    constexpr id_t count = 122u;
 
     constexpr id_t invalid_index = 127u;
 

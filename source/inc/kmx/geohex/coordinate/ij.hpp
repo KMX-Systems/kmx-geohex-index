@@ -1,4 +1,5 @@
-/// @file geohex/coordinate/ij.hpp
+/// @file inc/kmx/geohex/coordinate/ij.hpp
+/// @ingroup Internal
 #pragma once
 #ifndef PCH
     #include <cstdint>

@@ -1,7 +1,8 @@
-/// @file geohex/cell/area.hpp
+/// @file inc/kmx/geohex/cell/area.hpp
+/// @ingroup Internal
 #pragma once
 #ifndef PCH
-    #include <kmx/geohex/base.hpp>
+    #include <kmx/geohex/index.hpp>
 #endif
 
 namespace kmx::geohex::cell::area

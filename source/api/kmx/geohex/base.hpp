@@ -1,21 +1,18 @@
-/// @file geohex/base.hpp
+/// @file api/kmx/geohex/base.hpp
+/// @ingroup API
+/// @brief Core enumerations, type aliases, and fundamental utilities for the GeoHex library.
 #pragma once
 #ifndef PCH
-    #include <cmath>
     #include <cstdint>
     #include <functional>
-    #include <numbers>
 #endif
-
-namespace kmx::gis::wgs84
-{
-    class coordinate;
-}
 
 namespace kmx
 {
-    constexpr double sqrt3_2 = 0.8660254037844386467637231707529361834714;
-
+    /// @brief Provides a convenient way to get the underlying integer value of a strongly-typed enum.
+    /// @tparam T An enum type.
+    /// @param e The enum value.
+    /// @return The underlying integral value of the enum.
     template <typename T>
         requires std::is_enum_v<T>
     constexpr auto operator+(const T e) noexcept
@@ -23,6 +20,11 @@ namespace kmx
         return static_cast<std::underlying_type_t<T>>(e);
     }
 
+    /// @brief Combines a new hash value with an existing seed.
+    /// @details A standard technique to combine multiple hash values into one,
+    ///          inspired by `boost::hash_combine`.
+    /// @param[in,out] seed The seed to combine with.
+    /// @param v The value to hash and combine.
     template <class T>
     void hash_combine(std::size_t& seed, const T& v) noexcept
     {
@@ -33,28 +35,24 @@ namespace kmx
 
 namespace kmx::geohex
 {
-    namespace coordinate
-    {
-        class ij;
-        class ijk;
-    }
+    using raw_index_t = std::uint64_t;
+    using digit_index = std::uint8_t;
+    using digit_t = std::uint8_t;
 
-    using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
-
+    /// @brief Defines the different H3 index modes (cell, edge, vertex).
     enum class index_mode_t : std::uint8_t
     {
         invalid,
         cell,
         edge_unidirectional,
         edge_bidirectional,
-        vertex,
+        vertex
     };
 
-    constexpr auto index_mode_count = +index_mode_t::vertex + 1u;
-
+    /// @brief Defines the 16 H3 grid resolutions, from 0 (coarsest) to 15 (finest).
     enum class resolution_t : std::uint8_t
     {
-        r0, // lowest detail
+        r0,
         r1,
         r2,
         r3,
@@ -69,44 +67,38 @@ namespace kmx::geohex
         r12,
         r13,
         r14,
-        r15, // highest detail
+        r15
     };
 
+    /// @brief The total number of H3 resolutions available.
     constexpr auto resolution_count = +resolution_t::r15 + 1u;
 
-    /// @ref _isResolutionClassIII (H3 C internal)
     /// @brief Determines if a resolution is Class III (odd).
-    /// @param res The resolution.
-    /// @return True if Class III, false otherwise (Class II - even).
+    /// @details Class III resolutions have a different grid orientation than Class II (even) resolutions.
+    /// @param res The resolution to check.
+    /// @return True if the resolution is odd (Class III), false otherwise.
     constexpr bool is_class_3(const resolution_t res) noexcept
     {
         return (+res % 2u) != 0u;
     }
 
+    /// @brief Defines the 7 directions in the H3 grid system, including the center.
     enum class direction_t : std::uint8_t
     {
-        center,  // center
-        k_axes,  // k-axes direction
-        j_axes,  // j-axes direction
-        jk_axes, // j == k direction (j_axes | k_axes_digit)
-        i_axes,  // i-axes direction
-        ik_axes, // i == k direction (i_axes_digit | k_axes_digit)
-        ij_axes, // i == j direction (i_axes_digit | j_axes_digit)
-        invalid, // invalid direction
+        center,
+        k_axes,
+        j_axes,
+        jk_axes,
+        i_axes,
+        ik_axes,
+        ij_axes,
+        invalid
     };
 
+    /// @brief The number of valid H3 directions (used for array sizing).
     constexpr auto direction_count = +direction_t::invalid;
 
-    direction_t rotate_60ccw(const direction_t digit) noexcept;
-    direction_t rotate_60cw(const direction_t digit) noexcept;
-
-    using k_distance = std::uint32_t;
-
-    namespace cell::base
-    {
-        using id_t = std::uint8_t;
-    }
-
+    /// @brief Defines error codes returned by library functions.
     enum class error_t : std::uint8_t
     {
         none = 0,
@@ -125,50 +117,15 @@ namespace kmx::geohex
         memory_alloc,
         memory_bounds,
         option_invalid,
+        not_supported,
+        buffer_too_small
     };
+}
 
-    class index;
+namespace kmx::geohex::cell::base
+{
+    using id_t = std::uint8_t;
 
-    template <typename _Float = double, typename _Int = int>
-    constexpr void cube_round(const _Float i, const _Float j, const _Float k, _Int& i_out, _Int& j_out, _Int& k_out) noexcept
-    {
-        _Int ri = std::round(i);
-        _Int rj = std::round(j);
-        _Int rk = std::round(k);
-
-        const auto i_diff = std::abs(static_cast<_Float>(ri) - i);
-        const auto j_diff = std::abs(static_cast<_Float>(rj) - j);
-        const auto k_diff = std::abs(static_cast<_Float>(rk) - k);
-
-        if ((i_diff > j_diff) && (i_diff > k_diff)) // round, maintaining valid cube coords.
-            ri = -rj - rk;
-        else if (j_diff > k_diff)
-            rj = -ri - rk;
-        else
-            rk = -ri - rj;
-
-        i_out = ri;
-        j_out = rj;
-        k_out = rk;
-    }
-
-    double scaling_factor(const resolution_t resolution) noexcept;
-
-    /// @brief Converts degrees to radians.
-    /// @param degrees Angle in degrees.
-    /// @return Angle in radians.
-    constexpr double degrees_to_radians(double degrees) noexcept
-    {
-        constexpr double rads_per_degree = std::numbers::pi_v<double> / 180.0;
-        return degrees * rads_per_degree;
-    }
-
-    /// @brief Converts radians to degrees.
-    /// @param radians Angle in radians.
-    /// @return Angle in degrees.
-    constexpr double radians_to_degrees(double radians) noexcept
-    {
-        constexpr double degrees_per_rad = 180.0 / std::numbers::pi_v<double>;
-        return radians * degrees_per_rad;
-    }
+    /// @ref res0CellCount
+    constexpr id_t count = 122u;
 }

@@ -1,4 +1,5 @@
-/// @file geohex/cell/pentagon.cpp
+/// @file src/kmx/geohex/cell/pentagon.cpp
+/// @ingroup Internal
 #include "kmx/geohex/cell/pentagon.hpp"
 #include <algorithm>
 

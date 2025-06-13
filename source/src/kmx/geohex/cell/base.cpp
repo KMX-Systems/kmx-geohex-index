@@ -1,4 +1,5 @@
-/// @file geohex/cell/base.cpp
+/// @file src/kmx/geohex/cell/base.cpp
+/// @ingroup Internal
 #include "kmx/geohex/cell/base.hpp"
 
 namespace kmx::geohex::cell::base
