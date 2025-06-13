@@ -7,7 +7,6 @@
     #include <kmx/geohex/base.hpp>
     #include <span>
     #include <string_view>
-    #include <vector>
 #endif
 
 namespace kmx::gis::wgs84

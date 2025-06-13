@@ -221,6 +221,28 @@ namespace kmx::geohex
         return static_cast<std::uint8_t>((value_ >> mode_dependent_pos) & mode_dependent_mask);
     }
 
+    void index_helper::set_vertex_number(const int vertex_num) noexcept
+    {
+        // 1. --- Create the inverted mask ---
+        // This mask will have zeros at the position of the mode-dependent bits
+        // and ones everywhere else.
+        // `~0ULL` creates an all-ones 64-bit integer.
+        // `~(mode_dependent_mask << mode_dependent_pos)` creates the "hole".
+        constexpr value_t inverted_mask = ~(mode_dependent_mask << mode_dependent_pos);
+
+        // 2. --- Clear the target bits ---
+        // Applying the inverted mask with a bitwise AND operation will zero out the
+        // three mode-dependent bits while leaving all other bits untouched.
+        value_ &= inverted_mask;
+
+        // 3. --- Set the new bits ---
+        // a. Take the integer `vertex_num`, cast it to our value_t, and mask it to
+        //    ensure it doesn't exceed the 3-bit range (0-7). This is a safety measure.
+        // b. Shift the masked value to the correct position.
+        // c. Use a bitwise OR operation to merge the new bits into the cleared value.
+        value_ |= (static_cast<value_t>(vertex_num) & mode_dependent_mask) << mode_dependent_pos;
+    }
+
     // --- Detail-level Free Function Implementations ---
 
     error_t to_wgs(const raw_index_t idx, gis::wgs84::coordinate& coord) noexcept
@@ -299,7 +321,7 @@ namespace kmx::geohex
         // This is a simplified representation of the H3 C algorithm's logic.
         // A full implementation is highly complex and depends on the rest of the internal API.
 
-        size_t children_written = 0;
+        std::size_t children_written = 0;
 
         // a. Get the center child first. The center child has the same path as the
         //    parent, just at a finer resolution with intermediate digits set to "center".
@@ -321,7 +343,7 @@ namespace kmx::geohex
 
         // For this example, we'll just fill the remaining slots with the parent index
         // to show the structure. In a real implementation, you would generate real children.
-        for (size_t i = 1; i < required_size; ++i)
+        for (std::size_t i = 1; i < required_size; ++i)
         {
             // Placeholder: A real implementation would generate a unique child here.
             out_children[children_written++] = parent_idx;
@@ -341,7 +363,7 @@ namespace kmx::geohex
 
         helper.set_resolution(parent_res);
         for (digit_index i = static_cast<digit_index>(parent_res); i < index_helper::digit_count(); ++i)
-            helper.set_digit(i, 7); // Set to invalid digit
+            helper.set_digit(i, 7u); // Set to invalid digit
 
         return helper.value();
     }

@@ -8,16 +8,12 @@
     #include <numbers>
 #endif
 
-namespace kmx::geohex
+namespace kmx::math
 {
-    constexpr double sqrt3_2 = 0.8660254037844386467637231707529361834714;
-
-    using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
-
     /// @brief Converts an angle from degrees to radians.
     /// @param degrees The angle in degrees.
     /// @return The equivalent angle in radians.
-    constexpr double degrees_to_radians(double degrees) noexcept
+    constexpr double degrees_to_radians(const double degrees) noexcept
     {
         constexpr double rads_per_degree = std::numbers::pi_v<double> / 180.0;
         return degrees * rads_per_degree;
@@ -26,11 +22,18 @@ namespace kmx::geohex
     /// @brief Converts an angle from radians to degrees.
     /// @param radians The angle in radians.
     /// @return The equivalent angle in degrees.
-    constexpr double radians_to_degrees(double radians) noexcept
+    constexpr double radians_to_degrees(const double radians) noexcept
     {
         constexpr double degrees_per_rad = 180.0 / std::numbers::pi_v<double>;
         return radians * degrees_per_rad;
     }
+}
+
+namespace kmx::geohex
+{
+    constexpr double sqrt3_2 = 0.8660254037844386467637231707529361834714;
+
+    using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
 
     /// @brief Rotates a direction 60 degrees counter-clockwise.
     /// @param digit The initial direction.

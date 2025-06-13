@@ -88,9 +88,10 @@ namespace kmx::geohex
     void index::get_number(number_span& span) const noexcept
     {
         const index_helper helper {value_};
-        for (digit_index i = 0; i < digit_count(); ++i)
+        for (digit_index i {}; i < digit_count(); ++i)
             span[i] = static_cast<char>('0' + helper.digit(i));
-        span[digit_count()] = '\0';
+
+        span[digit_count()] = 0;
     }
 
     // --- Geographic Functions ---
@@ -150,7 +151,7 @@ namespace kmx::geohex
         // 5. If the internal function succeeded, resize the original caller's span
         //    to match the number of children that were actually written.
         if (err == error_t::none)
-            out_children = out_children.subspan(0, raw_children_span.size());
+            out_children = out_children.subspan(0u, raw_children_span.size());
 
         return err;
     }
@@ -164,9 +165,7 @@ namespace kmx::geohex
     {
         // 1. Validate the output buffer size.
         if (out_buffer.size() < max_hex_string_buffer_size)
-        {
             return error_t::buffer_too_small;
-        }
 
         // 2. Use snprintf for safe, fast, and standard-compliant formatting.
         // It's often faster than iostreams and guarantees null termination.
@@ -174,16 +173,16 @@ namespace kmx::geohex
         const int chars_written = std::snprintf(out_buffer.data(), out_buffer.size(), "%llx", idx.value());
 
         // 3. Check for encoding errors.
-        if (chars_written < 0 || static_cast<size_t>(chars_written) >= out_buffer.size())
+        if ((chars_written < 0) || (static_cast<std::size_t>(chars_written) >= out_buffer.size()))
         {
             // Encoding error or truncation occurred. Clear the buffer to be safe.
-            out_buffer.front() = '\0';
-            out_buffer = out_buffer.subspan(0, 0);
+            out_buffer.front() = 0;
+            out_buffer = out_buffer.subspan(0u, 0u);
             return error_t::failed;
         }
 
         // 4. Update the caller's span to reflect the actual number of characters written.
-        out_buffer = out_buffer.subspan(0, static_cast<size_t>(chars_written));
+        out_buffer = out_buffer.subspan(0, static_cast<std::size_t>(chars_written));
 
         return error_t::none;
     }
@@ -192,20 +191,16 @@ namespace kmx::geohex
     {
         // 1. Basic validation. An H3 string cannot be empty or too long.
         if (str.empty() || str.length() > max_hex_string_length)
-        {
-            return index {0};
-        }
+            return index {0u};
 
         // 2. Use std::from_chars for non-allocating, non-throwing parsing.
-        index::value_t value = 0;
+        index::value_t value {};
         auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value, 16);
 
         // 3. Check for successful parsing.
         // The entire string must be consumed (ptr == end) and there must be no error.
-        if (ec == std::errc() && ptr == str.data() + str.size())
-        {
+        if ((ec == std::errc()) && (ptr == str.data() + str.size()))
             return index {value};
-        }
 
         // 4. If parsing failed, return an invalid index.
         return index {0};

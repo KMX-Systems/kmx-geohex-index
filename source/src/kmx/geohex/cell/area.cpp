@@ -12,7 +12,7 @@ namespace kmx::geohex::cell::area
     constexpr double earth_radius_km = 6371.0088;
     constexpr double meters_per_km = 1000.0;
 
-    error_t km2(const index& cell, double& out) noexcept
+    error_t km2(const index cell, double& out) noexcept
     {
         out = 0.0;
         double area_rads2_val;
@@ -24,7 +24,7 @@ namespace kmx::geohex::cell::area
         return error_t::none;
     }
 
-    error_t m2(const index& cell, double& out) noexcept
+    error_t m2(const index cell, double& out) noexcept
     {
         out = 0.0;
         double area_rads2_val;
@@ -36,7 +36,7 @@ namespace kmx::geohex::cell::area
         return error_t::none;
     }
 
-    error_t rad2(const index& cell, double& out) noexcept
+    error_t rad2(const index cell, double& out) noexcept
     {
         std::array<gis::wgs84::coordinate, boundary::max_vertices> boundary_data;
         std::span<gis::wgs84::coordinate> boundary_data_span {boundary_data.begin(), boundary_data.end()};

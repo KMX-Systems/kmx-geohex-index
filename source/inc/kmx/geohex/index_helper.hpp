@@ -110,6 +110,30 @@ namespace kmx::geohex
         /// @note Only valid if mode() is vertex.
         [[nodiscard]] std::uint8_t vertex_number() const noexcept;
 
+        /// @brief Encodes a logical vertex number into the mode-dependent bits of the raw index.
+        /// @details
+        /// This is a low-level, high-performance "setter" function responsible for one part of
+        /// creating a valid vertex-mode index. It operates directly on the 64-bit integer value.
+        ///
+        /// The function uses a "clear-then-set" bitwise pattern:
+        /// 1. An inverted mask is used with a bitwise AND to zero out the 3 mode-dependent bits,
+        ///    leaving all other bits (resolution, base cell, etc.) untouched.
+        /// 2. The new vertex number is masked, shifted to the correct position, and then
+        ///    merged into the raw index using a bitwise OR.
+        ///
+        /// @note
+        /// This is a critical internal-only function. It performs **no validation** on the
+        /// current mode of the index. The caller is responsible for first calling `set_mode()`
+        /// to `index_mode_t::vertex` before using this function. It blindly overwrites the
+        /// bits at the `mode_dependent_pos`, which could corrupt an edge index if misused.
+        ///
+        /// @param vertex_num The logical vertex number to encode. The valid range is [0-5].
+        ///                   While the internal masking handles larger values, callers should
+        ///                   always provide a value within the valid range.
+        ///
+        /// @see vertex::from_cell, index_helper::set_mode, index_helper::vertex_number
+        void set_vertex_number(const int vertex_num) noexcept;
+
     private:
         // Bitfield Layout Constants (snake_lower_case)
         static constexpr std::uint8_t reserved_pos = 63u;
