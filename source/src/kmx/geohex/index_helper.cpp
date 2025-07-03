@@ -4,7 +4,6 @@
 #include "kmx/geohex/base.hpp"             // For error_t, resolution_t etc.
 #include "kmx/geohex/icosahedron/face.hpp" // For ijk struct and functions
 #include "kmx/gis/wgs84/coordinate.hpp"    // For coordinate class
-#include <algorithm>
 
 #if defined(_MSC_VER) && defined(_M_X64)
     #include <intrin.h>

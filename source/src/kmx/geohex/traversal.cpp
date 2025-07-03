@@ -1,3 +1,4 @@
+/// @file src/kmx/geohex/traversal.cpp
 #include "kmx/geohex/traversal.hpp"
 #include "kmx/geohex/icosahedron/face.hpp"
 #include <queue>
