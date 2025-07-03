@@ -18,7 +18,7 @@ namespace kmx::geohex::region
     /// @return True if the point is inside the polygon, false otherwise.
     bool is_inside_polygon(const gis::wgs84::coordinate& point, std::span<const gis::wgs84::coordinate> polygon) noexcept;
 
-    // --- Polyfill Functions ---
+    // Polyfill Functions
 
     /// @brief Calculates an upper bound on the number of cells needed to fill a polygon.
     /// @details This function is guaranteed not to throw exceptions.
@@ -43,7 +43,7 @@ namespace kmx::geohex::region
     /// @return `error_t::none` on success.
     error_t polyfill(std::span<const gis::wgs84::coordinate> polygon, const resolution_t res, std::span<index>& out_cells) noexcept;
 
-    // --- Compact/Uncompact Functions ---
+    // Compact/Uncompact Functions
 
     /// @brief Calculates the number of cells that will result from uncompacting a set.
     /// @details This function is guaranteed not to throw exceptions.

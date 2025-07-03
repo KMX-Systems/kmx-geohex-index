@@ -557,11 +557,11 @@ namespace kmx::geohex::icosahedron::face
         id_t center_face = from_wgs(coord);
 
         math::vector2d uv;
-        if (projection::v3d_to_face_uv(v3d, center_face, uv) != error_t::none)
+        if (projection::to_face_uv(v3d, center_face, uv) != error_t::none)
             return error_t::failed;
 
         coordinate::ijk center_ijk_coords;
-        if (projection::face_uv_to_ijk(uv, res, center_ijk_coords) != error_t::none)
+        if (projection::to_ijk(uv, res, center_ijk_coords) != error_t::none)
             return error_t::failed;
 
         const auto center_v2d = coordinate::to_vec2<double>(center_ijk_coords);
@@ -588,11 +588,11 @@ namespace kmx::geohex::icosahedron::face
                 checked_faces[+neighbor_face] = true;
 
                 math::vector2d neighbor_uv;
-                if (projection::v3d_to_face_uv(v3d, neighbor_face, neighbor_uv) != error_t::none)
+                if (projection::to_face_uv(v3d, neighbor_face, neighbor_uv) != error_t::none)
                     continue;
 
                 coordinate::ijk neighbor_ijk_coords;
-                projection::face_uv_to_ijk(neighbor_uv, res, neighbor_ijk_coords);
+                projection::to_ijk(neighbor_uv, res, neighbor_ijk_coords);
 
                 const auto neighbor_v2d = coordinate::to_vec2<double>(neighbor_ijk_coords);
                 const double dist_sq = hex2d_distance_sq(neighbor_uv, neighbor_v2d);
@@ -986,7 +986,7 @@ namespace kmx::geohex::icosahedron::face
     error_t to_wgs(const ijk& fijk, const resolution_t res, gis::wgs84::coordinate& out_coord) noexcept
     {
         math::vector3d v3d;
-        if (projection::face_ijk_to_v3d(fijk, res, v3d) != error_t::none)
+        if (projection::to_v3d(fijk, res, v3d) != error_t::none)
             return error_t::failed;
 
         projection::to_wgs(v3d, out_coord);
@@ -1070,16 +1070,16 @@ namespace kmx::geohex::icosahedron::face
 
         // 1. Convert the high-resolution FaceIJK to a 3D vector.
         math::vector3d v3d;
-        if (projection::face_ijk_to_v3d(fijk_higher_res, res_higher, v3d) != error_t::none)
+        if (projection::to_v3d(fijk_higher_res, res_higher, v3d) != error_t::none)
             return error_t::failed;
 
         // 2. Project that 3D vector onto the same face's 2D gnomonic plane.
         math::vector2d uv;
-        if (projection::v3d_to_face_uv(v3d, fijk_higher_res.face, uv) != error_t::none)
+        if (projection::to_face_uv(v3d, fijk_higher_res.face, uv) != error_t::none)
             return error_t::failed;
 
         // 3. Convert the 2D UV coordinates to an IJK grid at the desired *lower* resolution.
-        return projection::face_uv_to_ijk(uv, res_lower, out_ijk_lower_res);
+        return projection::to_ijk(uv, res_lower, out_ijk_lower_res);
     }
 
     /// @brief Rotations to apply when moving from a pentagon to a neighboring face.

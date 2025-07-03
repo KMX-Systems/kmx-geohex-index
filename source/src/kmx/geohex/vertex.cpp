@@ -7,7 +7,7 @@ namespace kmx::geohex::vertex
 {
     index from_cell(const index cell, int vertex_num) noexcept
     {
-        // 1. --- Input Validation ---
+        // 1. Input Validation
         if (!cell.is_valid() || cell.mode() != index_mode_t::cell)
             return {};
 
@@ -18,7 +18,7 @@ namespace kmx::geohex::vertex
         if (cell.is_pentagon() && vertex_num > 4)
             return {};
 
-        // 2. --- Construct the Vertex Index ---
+        // 2. Construct the Vertex Index
         // Start with the raw value of the parent cell.
         index_helper vertex_helper {cell.value()};
 
@@ -28,7 +28,7 @@ namespace kmx::geohex::vertex
         // Encode the logical vertex number into the mode-dependent bits.
         vertex_helper.set_vertex_number(vertex_num);
 
-        // 3. --- Return the new index ---
+        // 3. Return the new index
         return index {vertex_helper.value()};
     }
 
@@ -52,12 +52,12 @@ namespace kmx::geohex::vertex
 
     error_t to_wgs(const index vertex, gis::wgs84::coordinate& out_coord) noexcept
     {
-        // 1. --- Input Validation ---
+        // 1. Input Validation
         index_helper vertex_helper {vertex.value()};
         if (vertex_helper.mode() != index_mode_t::vertex)
             return error_t::domain;
 
-        // 2. --- Determine the "Owner" Cell and Vertex Number ---
+        // 2. Determine the "Owner" Cell and Vertex Number
         // A vertex index is derived from a single "owner" cell. We can reverse
         // the creation process to find it.
 
@@ -72,7 +72,7 @@ namespace kmx::geohex::vertex
         if (!owner_cell.is_valid())
             return error_t::cell_invalid;
 
-        // 3. --- Get the Geographic Boundary of the Owner Cell ---
+        // 3. Get the Geographic Boundary of the Owner Cell
         // The geographic location of the vertex is simply one of the points
         // on the owner cell's boundary.
 
@@ -86,7 +86,7 @@ namespace kmx::geohex::vertex
         if (boundary_err != error_t::none)
             return boundary_err;
 
-        // 4. --- Select the Correct Vertex from the Boundary ---
+        // 4. Select the Correct Vertex from the Boundary
         // `boundary_span` is now resized to the actual number of vertices (5 or 6).
         // Check if the requested vertex number is valid for this specific cell.
         if (static_cast<std::size_t>(vertex_num) >= boundary_span.size())

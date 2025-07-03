@@ -17,16 +17,16 @@ namespace kmx::geohex::projection
 
     /// @ref _faceIjkToXYZ (H3 C internal, related to _faceIjkToGeoEx from faceijk.c)
     /// @brief Converts FaceIJK coordinates (cell center or vertex) to a 3D Cartesian vector.
-    error_t face_ijk_to_v3d(const icosahedron::face::ijk& fijk_coords, resolution_t res, math::vector3d& out_v3) noexcept;
+    error_t to_v3d(const icosahedron::face::ijk& fijk_coords, resolution_t res, math::vector3d& out_v3) noexcept;
 
     /// @ref _v3dToFaceV2d
     /// @brief Projects a 3D point on the sphere to 2D UV coordinates on a specified face's plane.
-    error_t v3d_to_face_uv(const math::vector3d& v3d, const icosahedron::face::id_t face_num, math::vector2d& out_uv) noexcept;
+    error_t to_face_uv(const math::vector3d& v3d, const icosahedron::face::id_t face_num, math::vector2d& out_uv) noexcept;
 
     /// @ref _hex2dToCoordIJK
     /// @brief Converts 2D UV coordinates on a face plane (after scaling/rotation) to IJK coordinates.
     /// @param raw_uv_on_face The UV coordinates directly from projection, before res-specific scaling/rotation.
     /// @param res The target resolution for the IJK.
     /// @param out_ijk Output IJK coordinates.
-    error_t face_uv_to_ijk(const math::vector2d& raw_uv_on_face, const resolution_t res, coordinate::ijk& out_ijk) noexcept;
+    error_t to_ijk(const math::vector2d& raw_uv_on_face, const resolution_t res, coordinate::ijk& out_ijk) noexcept;
 }

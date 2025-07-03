@@ -52,14 +52,14 @@ namespace kmx::geohex::unidirectional_edge
 
     index destination(const index edge) noexcept
     {
-        // 1. --- Input Validation ---
+        // 1. Input Validation
         // First, verify that the provided index is actually a valid unidirectional edge.
         // If not, its destination is undefined, so we return a default-constructed index.
         index_helper edge_helper {edge.value()};
         if (edge_helper.mode() != index_mode_t::edge_unidirectional)
             return {};
 
-        // 2. --- Get Origin Cell and Edge Direction ---
+        // 2. Get Origin Cell and Edge Direction
         // The destination is the neighbor of the origin cell in the direction
         // encoded by the edge.
 
@@ -73,7 +73,7 @@ namespace kmx::geohex::unidirectional_edge
         if (dir == direction_t::invalid || dir == direction_t::center)
             return {}; // An edge cannot have an invalid or center direction.
 
-        // 3. --- Find the Neighbor ---
+        // 3. Find the Neighbor
         // The most robust way to find the neighbor is to use the library's core
         // traversal primitive, which handles all face-crossing logic.
 
@@ -92,7 +92,7 @@ namespace kmx::geohex::unidirectional_edge
         if (icosahedron::face::to_index(destination_fijk, origin_cell.resolution(), destination_cell) != error_t::none)
             return {};
 
-        // 4. --- Return Result ---
+        // 4. Return Result
         return destination_cell;
     }
 
@@ -107,7 +107,7 @@ namespace kmx::geohex::unidirectional_edge
     using edge_vertex_lookup_table = std::array<direction_to_vertex_map, 2u>;
 
     static constexpr edge_vertex_lookup_table edge_to_vertex_map //
-        {{                                                       // --- Class II (even resolution) Grid Orientation ---
+        {{                                                       // Class II (even resolution) Grid Orientation
           {{/* CENTER */ {-1, -1},
             /* K_AXES */ {3, 4},
             /* J_AXES */ {4, 5},
@@ -116,7 +116,7 @@ namespace kmx::geohex::unidirectional_edge
             /* IK_AXES */ {1, 2},
             /* IJ_AXES */ {2, 3},
             /* INVALID */ {-1, -1}}},
-          // --- Class III (odd resolution) Grid Orientation ---
+          // Class III (odd resolution) Grid Orientation
           {{/* CENTER */ {-1, -1},
             /* K_AXES */ {2, 3},
             /* J_AXES */ {3, 4},
@@ -128,7 +128,7 @@ namespace kmx::geohex::unidirectional_edge
 
     error_t get_boundary(const index edge, std::span<gis::wgs84::coordinate>& out_boundary) noexcept
     {
-        // 1. --- Input Validation ---
+        // 1. Input Validation
         index_helper edge_helper {edge.value()};
         if (edge_helper.mode() != index_mode_t::edge_unidirectional)
             return error_t::domain;
@@ -137,7 +137,7 @@ namespace kmx::geohex::unidirectional_edge
         if (out_boundary.size() < 2u)
             return error_t::buffer_too_small;
 
-        // 2. --- Get Edge Properties ---
+        // 2. Get Edge Properties
         const index origin_cell = origin(edge);
         if (!origin_cell.is_valid())
             return error_t::failed;
@@ -152,13 +152,13 @@ namespace kmx::geohex::unidirectional_edge
         if (origin_cell.is_pentagon() && dir == direction_t::ij_axes)
             return error_t::pentagon;
 
-        // 3. --- Determine Bounding Vertex Numbers ---
+        // 3. Determine Bounding Vertex Numbers
         // Use the modern, type-safe std::array lookup table.
         const vertex_pair& vertices = edge_to_vertex_map[class_3_index][static_cast<std::size_t>(dir)];
         const int vertex_num1 = vertices[0u];
         const int vertex_num2 = vertices[1u];
 
-        // 4. --- Get Vertex Indexes ---
+        // 4. Get Vertex Indexes
         // Convert the logical vertex numbers into actual GeoHex vertex indexes.
         const index vertex1 = vertex::from_cell(origin_cell, vertex_num1);
         const index vertex2 = vertex::from_cell(origin_cell, vertex_num2);
@@ -166,7 +166,7 @@ namespace kmx::geohex::unidirectional_edge
         if (!vertex1.is_valid() || !vertex2.is_valid())
             return error_t::failed;
 
-        // 5. --- Convert Vertex Indexes to Geographic Coordinates ---
+        // 5. Convert Vertex Indexes to Geographic Coordinates
         // Call the vertex API to get the final WGS84 coordinates for each vertex index.
         if (vertex::to_wgs(vertex1, out_boundary[0u]) != error_t::none)
             return error_t::failed;
@@ -174,7 +174,7 @@ namespace kmx::geohex::unidirectional_edge
         if (vertex::to_wgs(vertex2, out_boundary[1u]) != error_t::none)
             return error_t::failed;
 
-        // 6. --- Finalize Output Span ---
+        // 6. Finalize Output Span
         // Resize the output span to reflect that we have written exactly two coordinates.
         out_boundary = out_boundary.subspan(0, 2u);
 

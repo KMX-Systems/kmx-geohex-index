@@ -15,7 +15,7 @@ namespace kmx::geohex::grid
     /// @return The grid distance, or a negative value if the distance cannot be computed.
     [[nodiscard]] int distance(const index a, const index b) noexcept;
 
-    // --- k-Ring Functions ---
+    // k-Ring Functions
 
     /// @brief Calculates the maximum number of cells that can be in a k-ring for a given k.
     /// @details This function is guaranteed not to throw exceptions.
@@ -43,7 +43,7 @@ namespace kmx::geohex::grid
     /// @return `error_t::none` on success, or `error_t::buffer_too_small`.
     error_t k_ring(const index origin, const int k, std::span<index>& out_ring) noexcept;
 
-    // --- Path Functions ---
+    // Path Functions
 
     /// @brief Calculates the exact number of cells in the path between two indexes.
     /// @details The size of the path is `grid_distance + 1`. This function is guaranteed

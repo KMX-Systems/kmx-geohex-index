@@ -4,13 +4,12 @@
 #include "kmx/geohex/cell/area.hpp"
 #include "kmx/geohex/cell/boundary.hpp"
 #include "kmx/geohex/index_helper.hpp"
-#include <algorithm> // For std::transform
 #include <charconv>
 #include <cstdio>
 
 namespace kmx::geohex
 {
-    // --- Properties ---
+    // Properties
 
     bool index::is_valid() const noexcept
     {
@@ -58,7 +57,7 @@ namespace kmx::geohex
         value_ = helper.value();
     }
 
-    // --- Digit Manipulation ---
+    // Digit Manipulation
 
     digit_t index::digit(const digit_index index) const noexcept
     {
@@ -94,7 +93,7 @@ namespace kmx::geohex
         span[digit_count()] = 0;
     }
 
-    // --- Geographic Functions ---
+    // Geographic Functions
 
     error_t index::get_area_km2(double& out_area) const noexcept
     {
@@ -121,7 +120,7 @@ namespace kmx::geohex
         return index {geohex::from_wgs(coord, res)};
     }
 
-    // --- Hierarchy Functions ---
+    // Hierarchy Functions
 
     std::uint64_t index::children_count(const resolution_t child_resolution) const noexcept
     {
@@ -170,7 +169,7 @@ namespace kmx::geohex
         // 2. Use snprintf for safe, fast, and standard-compliant formatting.
         // It's often faster than iostreams and guarantees null termination.
         // The format specifier "%llx" is for an unsigned long long (uint64_t).
-        const int chars_written = std::snprintf(out_buffer.data(), out_buffer.size(), "%llx", idx.value());
+        const int chars_written = std::snprintf(out_buffer.data(), out_buffer.size(), "%lx", idx.value());
 
         // 3. Check for encoding errors.
         if ((chars_written < 0) || (static_cast<std::size_t>(chars_written) >= out_buffer.size()))

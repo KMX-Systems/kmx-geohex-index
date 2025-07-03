@@ -31,7 +31,7 @@ namespace kmx::geohex
 
         using wgs_coord = gis::wgs84::coordinate;
 
-        // --- Constructors and Assignment ---
+        // Constructors and Assignment
 
         /// @brief Default constructor. Creates an invalid index with a value of 0.
         constexpr index() noexcept = default;
@@ -56,7 +56,7 @@ namespace kmx::geohex
         /// @param item The raw H3 index value to assign.
         void operator=(const value_t item) noexcept { value_ = item; }
 
-        // --- Value Access ---
+        // Value Access
 
         /// @brief Gets the raw 64-bit integer value of the index.
         /// @return The underlying uint64_t value.
@@ -73,7 +73,7 @@ namespace kmx::geohex
         /// @brief Implicit conversion to the raw 64-bit integer value.
         [[nodiscard]] constexpr operator value_t() const noexcept { return value_; }
 
-        // --- Comparison ---
+        // Comparison
 
         /// @brief Non-equality comparison operator.
         [[nodiscard]] bool operator!=(const index& other) const noexcept = default;
@@ -81,7 +81,7 @@ namespace kmx::geohex
         /// @brief Equality comparison operator.
         [[nodiscard]] bool operator==(const index& other) const noexcept = default;
 
-        // --- Properties ---
+        // Properties
 
         /// @brief Validates the H3 index.
         /// @return True if the index represents a valid H3 cell, false otherwise.
@@ -115,7 +115,7 @@ namespace kmx::geohex
         /// @param item The new base cell to set (0-121).
         void set_base_cell(const cell::base::id_t item) noexcept;
 
-        // --- Digit Manipulation ---
+        // Digit Manipulation
 
         /// @brief Returns the maximum number of resolution-specific digits.
         [[nodiscard]] static constexpr digit_index digit_count() noexcept { return 15u; }
@@ -140,14 +140,14 @@ namespace kmx::geohex
         /// @return The leading non-zero digit, or Center for an all-zero index.
         [[nodiscard]] direction_t leading_non_zero_digit() const noexcept;
 
-        // --- String/Number Representation ---
+        // String/Number Representation
 
         /// @brief Fills a span with the character representation of the index digits.
         /// @param span The output span to fill. Must be of size 16. The last character will be '\0'.
         using number_span = std::span<char, 16u>;
         void get_number(number_span& span) const noexcept;
 
-        // --- Geographic Functions ---
+        // Geographic Functions
 
         /// @brief Calculates the area of this H3 cell in square kilometers.
         /// @param[out] out_area The calculated area in km^2.
@@ -175,7 +175,7 @@ namespace kmx::geohex
         /// @return The H3 index. Returns an invalid index (value 0) on error.
         [[nodiscard]] static index from_wgs(const wgs_coord& coord, const resolution_t res) noexcept;
 
-        // --- Hierarchy Functions ---
+        // Hierarchy Functions
 
         /// @brief Calculates the number of children this cell has at a finer resolution.
         /// @param child_resolution The resolution of the children.

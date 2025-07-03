@@ -1,4 +1,4 @@
-#include "kmx/geohex/index_utils.hpp"
+#include "kmx/geohex/traversal.hpp"
 #include "kmx/geohex/icosahedron/face.hpp"
 #include <queue>
 
@@ -151,19 +151,19 @@ namespace kmx::geohex
 
     error_t local_ijk_to_index(const index origin, const coordinate::ijk& ijk, index& out_index) noexcept
     {
-        // 1. --- Get the absolute FaceIJK of the origin ---
+        // 1. Get the absolute FaceIJK of the origin
         icosahedron::face::oriented_ijk origin_fijk;
         if (icosahedron::face::from_index(origin, origin_fijk) != error_t::none)
             return error_t::failed;
 
-        // 2. --- Add the local IJK offset to the origin's IJK to find the target ---
+        // 2. Add the local IJK offset to the origin's IJK to find the target
         // This gives us a FaceIJK that is *conceptually* correct but may be outside
         // the coordinate bounds of the origin's immediate face.
         icosahedron::face::oriented_ijk target_fijk = origin_fijk;
         target_fijk.ijk_coords += ijk;
         target_fijk.ijk_coords.normalize();
 
-        // 3. --- Traverse from origin to target to resolve face crossings ---
+        // 3. Traverse from origin to target to resolve face crossings
         // We now have the start and end points in the same conceptual grid. We perform
         // a line-drawing traversal *again*, but this time our goal is not to find the
         // path, but to correctly accumulate the coordinate transformations that occur
@@ -220,7 +220,7 @@ namespace kmx::geohex
             current_fijk = temp_fijk;
         }
 
-        // 4. --- Convert the final, globally-correct FaceIJK to an index ---
+        // 4. Convert the final, globally-correct FaceIJK to an index
         return icosahedron::face::to_index(current_fijk, res, out_index);
     }
 }

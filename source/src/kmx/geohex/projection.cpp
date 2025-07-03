@@ -26,7 +26,7 @@ namespace kmx::geohex::projection
 
     /// @ref _faceIjkToXYZ (H3 C internal, related to _faceIjkToGeoEx from faceijk.c)
     /// @brief Converts FaceIJK coordinates (cell center or vertex) to a 3D Cartesian vector.
-    error_t face_ijk_to_v3d(const icosahedron::face::ijk& fijk_coords, resolution_t res, math::vector3d& out_v3) noexcept
+    error_t to_v3d(const icosahedron::face::ijk& fijk_coords, resolution_t res, math::vector3d& out_v3) noexcept
     {
         // 1. Convert IJK to a 2D vector on the canonical hex grid.
         math::vector2d v2d = coordinate::to_vec2<double>(fijk_coords.ijk_coords);
@@ -65,7 +65,7 @@ namespace kmx::geohex::projection
         return error_t::none;
     }
 
-    error_t face_uv_to_ijk(const math::vector2d& raw_uv_on_face, const resolution_t res, coordinate::ijk& out_ijk) noexcept
+    error_t to_ijk(const math::vector2d& raw_uv_on_face, const resolution_t res, coordinate::ijk& out_ijk) noexcept
     {
         math::vector2d processed_uv = raw_uv_on_face;
 
@@ -99,16 +99,16 @@ namespace kmx::geohex::projection
 
     /// @ref _v3dToFaceV2d
     /// @brief Projects a 3D point on the sphere to 2D UV coordinates on a specified face's plane.
-    error_t v3d_to_face_uv(const math::vector3d& v3d, const icosahedron::face::id_t face_num, math::vector2d& out_uv) noexcept
+    error_t to_face_uv(const math::vector3d& v3d, const icosahedron::face::id_t face_num, math::vector2d& out_uv) noexcept
     {
-        // This is the inverse of face_ijk_to_v3d, performing a gnomonic projection.
+        // This is the inverse of to_v3d, performing a gnomonic projection.
         const auto face_center = icosahedron::face::center_point(face_num);
 
         // The point must be on the same hemisphere as the face center for gnomonic projection.
         if (v3d.dot(face_center) < 0.0)
             return error_t::failed; // Or a more specific error like DOMAIN
 
-        // Use the same ad-hoc basis as in face_ijk_to_v3d for consistency.
+        // Use the same ad-hoc basis as in to_v3d for consistency.
         math::vector3d u_vec, v_vec;
         if (std::abs(face_center.x) > std::abs(face_center.y))
             u_vec = math::vector3d(-face_center.z, 0, face_center.x).normalized();

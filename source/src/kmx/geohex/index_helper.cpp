@@ -13,7 +13,7 @@
 
 namespace kmx::geohex
 {
-    // --- Private Static Validation Helper Implementations ---
+    // Private Static Validation Helper Implementations
 
     bool index_helper::has_invalid_digit_up_to_resolution(const value_t h, const resolution_t res) noexcept
     {
@@ -56,7 +56,7 @@ namespace kmx::geohex
         return false;
     }
 
-    // --- index_helper Member Function Implementations ---
+    // index_helper Member Function Implementations
 
     bool index_helper::is_valid() const noexcept
     {
@@ -74,7 +74,7 @@ namespace kmx::geohex
         {
             case index_mode_t::cell:
             {
-                // --- Cell-Specific Validation ---
+                // Cell-Specific Validation
                 // A cell index must have its mode bits set to 1.
                 if ((value_ >> mode_pos) != 1)
                     return false;
@@ -92,7 +92,7 @@ namespace kmx::geohex
 
             case index_mode_t::edge_unidirectional:
             {
-                // --- Unidirectional Edge-Specific Validation ---
+                // Unidirectional Edge-Specific Validation
                 // An edge index must have its mode bits set to 2.
                 if ((value_ >> mode_pos) != 2)
                     return false;
@@ -111,7 +111,7 @@ namespace kmx::geohex
 
             case index_mode_t::vertex:
             {
-                // --- Vertex-Specific Validation ---
+                // Vertex-Specific Validation
                 // A vertex index must have its mode bits set to 5.
                 if ((value_ >> mode_pos) != 5)
                     return false;
@@ -216,6 +216,16 @@ namespace kmx::geohex
         return static_cast<direction_t>((value_ >> mode_dependent_pos) & mode_dependent_mask);
     }
 
+    void index_helper::set_edge_direction(const direction_t direction) noexcept
+    {
+        // Create an inverted mask to clear the target bits without affecting others.
+        constexpr value_t inverted_mask = ~(mode_dependent_mask << mode_dependent_pos);
+        value_ &= inverted_mask;
+
+        // Mask the input, shift it into position, and OR it into the value.
+        value_ |= (static_cast<value_t>(direction) & mode_dependent_mask) << mode_dependent_pos;
+    }
+
     [[nodiscard]] std::uint8_t index_helper::vertex_number() const noexcept
     {
         return static_cast<std::uint8_t>((value_ >> mode_dependent_pos) & mode_dependent_mask);
@@ -223,19 +233,19 @@ namespace kmx::geohex
 
     void index_helper::set_vertex_number(const int vertex_num) noexcept
     {
-        // 1. --- Create the inverted mask ---
+        // 1. Create the inverted mask
         // This mask will have zeros at the position of the mode-dependent bits
         // and ones everywhere else.
         // `~0ULL` creates an all-ones 64-bit integer.
         // `~(mode_dependent_mask << mode_dependent_pos)` creates the "hole".
         constexpr value_t inverted_mask = ~(mode_dependent_mask << mode_dependent_pos);
 
-        // 2. --- Clear the target bits ---
+        // 2. Clear the target bits
         // Applying the inverted mask with a bitwise AND operation will zero out the
         // three mode-dependent bits while leaving all other bits untouched.
         value_ &= inverted_mask;
 
-        // 3. --- Set the new bits ---
+        // 3. Set the new bits
         // a. Take the integer `vertex_num`, cast it to our value_t, and mask it to
         //    ensure it doesn't exceed the 3-bit range (0-7). This is a safety measure.
         // b. Shift the masked value to the correct position.
@@ -243,7 +253,7 @@ namespace kmx::geohex
         value_ |= (static_cast<value_t>(vertex_num) & mode_dependent_mask) << mode_dependent_pos;
     }
 
-    // --- Detail-level Free Function Implementations ---
+    // Detail-level Free Function Implementations
 
     error_t to_wgs(const raw_index_t idx, gis::wgs84::coordinate& coord) noexcept
     {
@@ -317,7 +327,7 @@ namespace kmx::geohex
             return error_t::buffer_too_small;
         }
 
-        // 3. --- Core `cellToChildren` Algorithm ---
+        // 3. Core `cellToChildren` Algorithm
         // This is a simplified representation of the H3 C algorithm's logic.
         // A full implementation is highly complex and depends on the rest of the internal API.
 

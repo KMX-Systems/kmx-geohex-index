@@ -1,7 +1,7 @@
 /// @file src/kmx/geohex/grid.cpp
 #include "kmx/geohex/grid.hpp"
 #include "kmx/geohex/icosahedron/face.hpp" // For H3's core algorithms
-#include "kmx/geohex/index_utils.hpp"
+#include "kmx/geohex/traversal.hpp"
 #include <unordered_set>
 
 namespace kmx::geohex::grid
@@ -18,7 +18,7 @@ namespace kmx::geohex::grid
         return relative_ijk.distance_to({0, 0, 0});
     }
 
-    error_t k_ring(const index origin, int k, std::span<index>& out_ring) noexcept
+    error_t k_ring(const index origin, const int k, std::span<index>& out_ring) noexcept
     {
         if (k < 0 || !origin.is_valid())
             return error_t::domain;
@@ -52,7 +52,7 @@ namespace kmx::geohex::grid
                 // Prepare the output span for the internal helper.
                 std::span<index> neighbor_span = neighbor_buffer;
 
-                // --- THIS IS THE REAL IMPLEMENTATION ---
+                // THIS IS THE REAL IMPLEMENTATION
                 // Call the internal helper to get all neighbors for the current cell.
                 if (get_neighbors(cell, neighbor_span) != error_t::none)
                     return error_t::failed; // A failure in the core logic.
@@ -85,7 +85,7 @@ namespace kmx::geohex::grid
 
     error_t path_cells(const index start, const index end, std::span<index>& out_path) noexcept
     {
-        // 1. --- Input Validation and Sizing ---
+        // 1. Input Validation and Sizing
         const size_t required_size = path_cells_size(start, end);
         if (required_size == 0u)
             return error_t::domain;
@@ -93,13 +93,13 @@ namespace kmx::geohex::grid
         if (out_path.size() < required_size)
             return error_t::buffer_too_small;
 
-        // 2. --- Establish Local Coordinate System ---
+        // 2. Establish Local Coordinate System
         // Get the IJK coordinates of the end point relative to the start point.
         coordinate::ijk end_ijk;
         if (index_to_local_ijk(start, end, end_ijk) != error_t::none)
             return error_t::failed;
 
-        // 3. --- Hexagonal Line Drawing Algorithm ---
+        // 3. Hexagonal Line Drawing Algorithm
         // This is a direct implementation of the hex line-drawing algorithm, which
         // interpolates points in cube coordinate space and rounds to the nearest center.
         const int dist = static_cast<int>(required_size - 1);
@@ -115,8 +115,8 @@ namespace kmx::geohex::grid
         const double j_step = static_cast<double>(end_ijk.j) / dist;
         const double k_step = static_cast<double>(end_ijk.k) / dist;
 
-        size_t count = 0;
-        for (int i = 0; i <= dist; ++i)
+        std::size_t count {};
+        for (int i {}; i <= dist; ++i)
         {
             // a. Interpolate to find the ideal fractional coordinate at this step.
             const double i_frac = i_step * i;
@@ -134,11 +134,11 @@ namespace kmx::geohex::grid
                 return error_t::failed;
 
             // d. Add to output, ensuring no duplicates (can happen due to rounding).
-            if (count == 0 || out_path[count - 1] != current_cell)
+            if ((count == 0) || (out_path[count - 1] != current_cell))
                 out_path[count++] = current_cell;
         }
 
-        // 4. --- Finalize Output ---
+        // 4. Finalize Output
         out_path = out_path.subspan(0, count);
         return error_t::none;
     }

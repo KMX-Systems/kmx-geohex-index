@@ -1,7 +1,7 @@
 /// @file src/kmx/geohex/region.cpp
 #include "kmx/geohex/region.hpp"
 #include "kmx/geohex/grid.hpp"
-#include "kmx/geohex/index_utils.hpp"
+#include "kmx/geohex/traversal.hpp"
 #include <algorithm>
 #include <queue>
 #include <unordered_set>
@@ -107,7 +107,7 @@ namespace kmx::geohex::region
 
     error_t polyfill(std::span<const gis::wgs84::coordinate> polygon, const resolution_t res, std::span<index>& out_cells) noexcept
     {
-        // 1. --- Input Validation ---
+        // 1. Input Validation
         if (polygon.size() < 3u)
             return error_t::domain;
 
@@ -118,7 +118,7 @@ namespace kmx::geohex::region
         // Use a hash set for efficient O(1) insertion and duplicate handling.
         std::unordered_set<index> found_cells;
 
-        // 2. --- Trace Polygon Edges ---
+        // 2. Trace Polygon Edges
         // Walk along each segment of the polygon and find all grid cells that it intersects.
         for (std::size_t i {}; i < polygon.size(); ++i)
         {
@@ -139,7 +139,7 @@ namespace kmx::geohex::region
             }
         }
 
-        // 3. --- Find an Interior Seed Cell ---
+        // 3. Find an Interior Seed Cell
         // We need one guaranteed cell inside the polygon to start our fill from.
         // The most robust method is to check the neighbors of the traced boundary.
         index seed_cell;
@@ -176,7 +176,7 @@ namespace kmx::geohex::region
                 break;
         }
 
-        // 4. --- Fill Interior with Breadth-First Search (BFS) ---
+        // 4. Fill Interior with Breadth-First Search (BFS)
         if (seed_found)
         {
             std::queue<index> q;
@@ -205,7 +205,7 @@ namespace kmx::geohex::region
         // If no seed was found, it means the polygon is too small to have an interior,
         // and the boundary trace is the complete result.
 
-        // 5. --- Finalize Output ---
+        // 5. Finalize Output
         if (found_cells.size() > out_cells.size())
             return error_t::buffer_too_small; // Should be caught by initial check, but as a safeguard.
 
@@ -266,14 +266,10 @@ namespace kmx::geohex::region
         std::size_t parent_count {};
 
         for (const index cell: current_cells)
-        {
             if (cell.resolution() == res)
-            {
                 // This check is a safeguard, but should pass if the workspace is sized correctly.
                 if (parent_count < workspace.size())
                     workspace[parent_count++] = cell.get_parent(parent_res);
-            }
-        }
 
         auto parents_subspan = workspace.subspan(0u, parent_count);
 
@@ -290,7 +286,7 @@ namespace kmx::geohex::region
 
     error_t compact(std::span<const index> cells, std::span<index>& out_compacted, std::span<index> workspace) noexcept
     {
-        // 1. --- Input and Buffer Validation ---
+        // 1. Input and Buffer Validation
         if (cells.empty())
         {
             out_compacted = out_compacted.subspan(0u, 0u);
@@ -305,7 +301,7 @@ namespace kmx::geohex::region
         if (workspace.size() < compact_workspace_size(cells.size()))
             return error_t::buffer_too_small;
 
-        // 2. --- Setup ---
+        // 2. Setup
         // Start by copying the input cells into the output buffer. We will perform
         // the compaction in-place within this buffer.
         std::copy(cells.begin(), cells.end(), out_compacted.begin());
@@ -318,7 +314,7 @@ namespace kmx::geohex::region
 
         std::array<index, 7u> children_buffer;
 
-        // 3. --- Main Compaction Loop ---
+        // 3. Main Compaction Loop
         for (int r = +max_res; r > 0; --r)
         {
             resolution_t current_res = static_cast<resolution_t>(r);
@@ -376,21 +372,21 @@ namespace kmx::geohex::region
             }
         }
 
-        // 4. --- Finalize Output ---
+        // 4. Finalize Output
         out_compacted = current_work_span;
         return error_t::none;
     }
 
     error_t compact(std::span<const index> cells, std::vector<index>& out_compacted) noexcept
     {
-        // 1. --- Handle Empty Input ---
+        // 1. Handle Empty Input
         if (cells.empty())
         {
             out_compacted.clear();
             return error_t::none;
         }
 
-        // 2. --- Calculate Required Buffer Sizes ---
+        // 2. Calculate Required Buffer Sizes
         const std::size_t num_cells = cells.size();
 
         // The core algorithm needs space for its output (at most `num_cells`)
@@ -398,7 +394,7 @@ namespace kmx::geohex::region
         const std::size_t required_workspace_size = compact_workspace_size(num_cells);
         const std::size_t required_total_capacity = num_cells + required_workspace_size;
 
-        // 3. --- Ensure Sufficient Vector Capacity (The only `noexcept`-critical part) ---
+        // 3. Ensure Sufficient Vector Capacity (The only `noexcept`-critical part)
         if (out_compacted.capacity() < required_total_capacity)
         {
             // The vector's capacity is insufficient. We must try to reserve more.
@@ -416,7 +412,7 @@ namespace kmx::geohex::region
         }
         // From this point forward, no more allocations will occur.
 
-        // 4. --- Prepare Buffers from the Vector's Storage ---
+        // 4. Prepare Buffers from the Vector's Storage
         // We now have a guarantee that `out_compacted.data()` points to a buffer
         // that is large enough for the entire operation.
 
@@ -430,10 +426,10 @@ namespace kmx::geohex::region
         // Create a span for the workspace, pointing to the area immediately after the output area.
         std::span<index> workspace_span(out_compacted.data() + num_cells, required_workspace_size);
 
-        // 5. --- Execute the Core, Non-Allocating Algorithm ---
+        // 5. Execute the Core, Non-Allocating Algorithm
         const error_t err = compact(cells, output_span, workspace_span);
 
-        // 6. --- Finalize the Vector ---
+        // 6. Finalize the Vector
         if (err == error_t::none)
         {
             // The core function wrote the compacted result into the start of our buffer

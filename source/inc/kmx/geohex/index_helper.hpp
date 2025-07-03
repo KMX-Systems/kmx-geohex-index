@@ -85,18 +85,18 @@ namespace kmx::geohex
         /// @brief Gets the resolution-specific digit at a given index.
         /// @param index The digit index (0-14). 0 is the most significant digit (res 1).
         /// @return The digit value (0-7). Returns 0 for out-of-bounds index.
-        [[nodiscard]] digit_t digit(digit_index index) const noexcept;
+        [[nodiscard]] digit_t digit(const digit_index index) const noexcept;
 
         /// @brief Sets the resolution-specific digit at a given index.
         /// @param index The digit index (0-14) to modify.
         /// @param item The new digit value to set (0-7).
-        void set_digit(digit_index index, digit_t item) noexcept;
+        void set_digit(const digit_index index, const digit_t item) noexcept;
 
         /// @brief Sets a range of resolution digits to 0.
         /// @param start The starting digit index (inclusive, 0-14).
         /// @param end The ending digit index (inclusive, 0-14).
         /// @return True on success, false if indices are out of bounds.
-        bool set_digits_to_zero(digit_index start, digit_index end) noexcept;
+        bool set_digits_to_zero(const digit_index start, const digit_index end) noexcept;
 
         /// @brief Gets the first non-zero resolution digit.
         /// @return The leading non-zero digit, or Center for an all-zero index.
@@ -105,6 +105,13 @@ namespace kmx::geohex
         /// @brief Gets the direction of a unidirectional edge index.
         /// @note Only valid if mode() is edge_unidirectional.
         [[nodiscard]] direction_t edge_direction() const noexcept;
+
+        /// @brief Encodes a logical edge direction into the mode-dependent bits of the raw index.
+        /// @details This is a low-level "setter" for creating an edge-mode index. It uses a
+        ///          "clear-then-set" bitwise pattern to modify only the mode-dependent bits.
+        /// @note The caller is responsible for first calling `set_mode(index_mode_t::edge_unidirectional)`.
+        /// @param direction The direction to encode (must be 1-6).
+        void set_edge_direction(const direction_t direction) noexcept;
 
         /// @brief Gets the vertex number of a vertex index.
         /// @note Only valid if mode() is vertex.
