@@ -181,7 +181,7 @@ namespace kmx::geohex
         }
 
         // 4. Update the caller's span to reflect the actual number of characters written.
-        out_buffer = out_buffer.subspan(0, static_cast<std::size_t>(chars_written));
+        out_buffer = out_buffer.subspan(0u, static_cast<std::size_t>(chars_written));
 
         return error_t::none;
     }

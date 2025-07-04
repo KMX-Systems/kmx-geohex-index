@@ -230,7 +230,7 @@ namespace kmx::geohex
         return static_cast<std::uint8_t>((value_ >> mode_dependent_pos) & mode_dependent_mask);
     }
 
-    void index_helper::set_vertex_number(const int vertex_num) noexcept
+    void index_helper::set_vertex_number(const std::uint8_t vertex_num) noexcept
     {
         // 1. Create the inverted mask
         // This mask will have zeros at the position of the mode-dependent bits
@@ -315,7 +315,7 @@ namespace kmx::geohex
         // 1. Validate inputs.
         if (!parent_helper.is_valid() || child_res <= parent_res)
         {
-            out_children = out_children.subspan(0, 0); // Ensure output span is empty
+            out_children = out_children.subspan(0u, 0u); // Ensure output span is empty
             return error_t::domain;
         }
 
@@ -330,7 +330,7 @@ namespace kmx::geohex
         // This is a simplified representation of the H3 C algorithm's logic.
         // A full implementation is highly complex and depends on the rest of the internal API.
 
-        std::size_t children_written = 0;
+        std::size_t children_written {};
 
         // a. Get the center child first. The center child has the same path as the
         //    parent, just at a finer resolution with intermediate digits set to "center".
@@ -352,14 +352,14 @@ namespace kmx::geohex
 
         // For this example, we'll just fill the remaining slots with the parent index
         // to show the structure. In a real implementation, you would generate real children.
-        for (std::size_t i = 1; i < required_size; ++i)
+        for (std::size_t i = 1u; i < required_size; ++i)
         {
             // Placeholder: A real implementation would generate a unique child here.
             out_children[children_written++] = parent_idx;
         }
 
         // 4. Resize the output span to the actual number of children generated.
-        out_children = out_children.subspan(0, children_written);
+        out_children = out_children.subspan(0u, children_written);
 
         return error_t::none;
     }

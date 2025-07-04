@@ -5,17 +5,17 @@
 
 namespace kmx::geohex::vertex
 {
-    index from_cell(const index cell, int vertex_num) noexcept
+    index from_cell(const index cell, const std::uint8_t vertex_num) noexcept
     {
         // 1. Input Validation
         if (!cell.is_valid() || cell.mode() != index_mode_t::cell)
             return {};
 
-        if (vertex_num < 0 || vertex_num > 5)
+        if (vertex_num > 5u)
             return {};
 
         // A pentagon has only 5 vertices, numbered 0-4.
-        if (cell.is_pentagon() && vertex_num > 4)
+        if (cell.is_pentagon() && (vertex_num > 4u))
             return {};
 
         // 2. Construct the Vertex Index

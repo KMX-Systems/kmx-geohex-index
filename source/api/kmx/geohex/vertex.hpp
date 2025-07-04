@@ -14,7 +14,7 @@ namespace kmx::geohex::vertex
     /// @param cell The H3 cell index.
     /// @param vertex_num The vertex number to get (0-5).
     /// @return The H3 vertex index.
-    [[nodiscard]] index from_cell(const index cell, int vertex_num) noexcept;
+    [[nodiscard]] index from_cell(const index cell, const std::uint8_t vertex_num) noexcept;
 
     /// @brief Gets all vertex indexes for a cell.
     /// @details This is a non-allocating function that is guaranteed not to throw exceptions.

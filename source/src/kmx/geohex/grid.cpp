@@ -20,7 +20,7 @@ namespace kmx::geohex::grid
 
     error_t k_ring(const index origin, const int k, std::span<index>& out_ring) noexcept
     {
-        if (k < 0 || !origin.is_valid())
+        if ((k < 0) || !origin.is_valid())
             return error_t::domain;
 
         const std::size_t max_size = max_k_ring_size(k);
@@ -106,7 +106,7 @@ namespace kmx::geohex::grid
         if (dist == 0)
         { // If start and end are the same cell
             out_path[0] = start;
-            out_path = out_path.subspan(0, 1u);
+            out_path = out_path.subspan(0u, 1u);
             return error_t::none;
         }
 
@@ -139,7 +139,7 @@ namespace kmx::geohex::grid
         }
 
         // 4. Finalize Output
-        out_path = out_path.subspan(0, count);
+        out_path = out_path.subspan(0u, count);
         return error_t::none;
     }
 }

@@ -91,7 +91,7 @@ namespace kmx::geohex::cell::boundary
 
         // Adjust the output span's size to match the number of vertices actually written.
         // This is a crucial step for the caller to know the correct boundary size.
-        out_vertices = out_vertices.subspan(0, vertices_written);
+        out_vertices = out_vertices.subspan(0u, vertices_written);
 
         return error_t::none;
     }

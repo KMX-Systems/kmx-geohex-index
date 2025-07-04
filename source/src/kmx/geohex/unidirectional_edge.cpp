@@ -176,7 +176,7 @@ namespace kmx::geohex::unidirectional_edge
 
         // 6. Finalize Output Span
         // Resize the output span to reflect that we have written exactly two coordinates.
-        out_boundary = out_boundary.subspan(0, 2u);
+        out_boundary = out_boundary.subspan(0u, 2u);
 
         return error_t::none;
     }

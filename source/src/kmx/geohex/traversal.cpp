@@ -97,7 +97,7 @@ namespace kmx::geohex
                 break;
             }
 
-            for (uint8_t i = 1; i < direction_count; ++i)
+            for (std::uint8_t i = 1u; i < direction_count; ++i)
             {
                 const direction_t dir = static_cast<direction_t>(i);
                 const cell::base::id_t neighbor_bc = cell::base::neighbor_of(current_bc, dir);

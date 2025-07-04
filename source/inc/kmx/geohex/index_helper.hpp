@@ -139,7 +139,7 @@ namespace kmx::geohex
         ///                   always provide a value within the valid range.
         ///
         /// @see vertex::from_cell, index_helper::set_mode, index_helper::vertex_number
-        void set_vertex_number(const int vertex_num) noexcept;
+        void set_vertex_number(const std::uint8_t vertex_num) noexcept;
 
     private:
         // Bitfield Layout Constants (snake_lower_case)

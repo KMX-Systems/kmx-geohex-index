@@ -260,7 +260,7 @@ namespace kmx::geohex::region
                                                        std::span<index> workspace)
     {
         if (res == resolution_t::r0)
-            return workspace.subspan(0, 0);
+            return workspace.subspan(0u, 0u);
 
         const resolution_t parent_res = static_cast<resolution_t>(+res - 1);
         std::size_t parent_count {};
@@ -305,7 +305,7 @@ namespace kmx::geohex::region
         // Start by copying the input cells into the output buffer. We will perform
         // the compaction in-place within this buffer.
         std::copy(cells.begin(), cells.end(), out_compacted.begin());
-        auto current_work_span = out_compacted.subspan(0, cells.size());
+        auto current_work_span = out_compacted.subspan(0u, cells.size());
 
         resolution_t max_res = resolution_t::r0;
         for (const index cell: current_work_span)
