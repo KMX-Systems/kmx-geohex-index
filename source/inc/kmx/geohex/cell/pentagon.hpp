@@ -95,7 +95,38 @@ namespace kmx::geohex::cell::pentagon
     /// @param global_bc_id The global base cell ID (0-121).
     /// @return An `std::optional` containing the local pentagon index (0-11) if the
     ///         input ID corresponds to a pentagon. Returns `std::nullopt` otherwise.
-    std::optional<id_t> get_index(const base::id_t global_bc_id) noexcept;
+    constexpr std::optional<id_t> get_index(const base::id_t global_bc_id) noexcept
+    {
+        switch (global_bc_id)
+        {
+            case 4u:
+                return 0u;
+            case 14u:
+                return 1u;
+            case 24u:
+                return 2u;
+            case 38u:
+                return 3u;
+            case 49u:
+                return 4u;
+            case 58u:
+                return 5u;
+            case 63u:
+                return 6u;
+            case 72u:
+                return 7u;
+            case 83u:
+                return 8u;
+            case 97u:
+                return 9u;
+            case 107u:
+                return 10u;
+            case 117u:
+                return 11u;
+            default:
+                return {};
+        }
+    }
 
     /// @brief Type alias for a clockwise rotational offset.
     using clockwise_offset_t = std::int8_t;

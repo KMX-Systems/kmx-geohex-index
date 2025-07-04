@@ -71,7 +71,7 @@ namespace kmx::geohex::coordinate
     {
         // The sum of the components must be 0 for a valid cube coordinate.
         // This process rounds the values to the nearest valid integer coordinate.
-        if (i + j + k != 0)
+        if ((i + j + k) != 0)
         {
             value i_out, j_out, k_out;
             cube_round<value, value>(i, j, k, i_out, j_out, k_out);

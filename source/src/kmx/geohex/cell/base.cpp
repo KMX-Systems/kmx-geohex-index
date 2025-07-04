@@ -199,5 +199,4 @@ namespace kmx::geohex::cell::base
     {
         return distinct_rotation_data[rotation_index_map[base_cell_id]];
     }
-
 }

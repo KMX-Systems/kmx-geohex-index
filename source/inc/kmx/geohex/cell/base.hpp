@@ -21,14 +21,21 @@ namespace kmx::geohex::cell::base
     ///          absence of a valid base cell (e.g., a pentagon's missing neighbor).
     constexpr id_t invalid_index = 127u;
 
-    /// @brief Creates a resolution-0 H3 index from a base cell number.
+    /// @brief Creates a resolution-0 index from a base cell number.
     /// @details This is a convenient factory function for creating the 122 root cells
     ///          of the H3 hierarchy.
     /// @ref baseCellNumToCell
     /// @param no The base cell number (0-121).
     /// @return A valid resolution-0 `kmx::geohex::index` for the given base cell.
     ///         Returns an invalid index if `no` is out of range.
-    constexpr index create_index(const id_t no) noexcept;
+    constexpr index create_index(const id_t no) noexcept
+    {
+        index result;
+        if (no < count)
+            result.set_base_cell(no);
+
+        return result;
+    }
 
     /// @brief Finds the neighboring base cell in a given direction.
     /// @details This function performs a single-step traversal on the resolution-0
@@ -58,7 +65,10 @@ namespace kmx::geohex::cell::base
     /// @param item The ID of the base cell to check.
     /// @return `true` if the base cell is one of the two polar pentagons (4 or 117),
     ///         `false` otherwise.
-    constexpr bool is_polar_pentagon(const id_t item) noexcept;
+    constexpr bool is_polar_pentagon(const id_t item) noexcept
+    {
+        return (item == 4u) || (item == 117u);
+    }
 
     /// @brief An array holding the number of 60-degree counter-clockwise rotations
     ///        for each of the 7 directions.

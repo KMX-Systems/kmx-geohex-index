@@ -1,6 +1,6 @@
 /// @file src/kmx/geohex/grid.cpp
 #include "kmx/geohex/grid.hpp"
-#include "kmx/geohex/icosahedron/face.hpp" // For H3's core algorithms
+#include "kmx/geohex/icosahedron/face.hpp"
 #include "kmx/geohex/traversal.hpp"
 #include <unordered_set>
 
