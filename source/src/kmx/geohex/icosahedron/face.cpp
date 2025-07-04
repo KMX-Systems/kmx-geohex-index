@@ -9,138 +9,133 @@
 namespace kmx::geohex::icosahedron::face
 {
     static constexpr std::array<id_t, cell::base::count> face_data {
-        id_t::f1,  // base cell 0
-        id_t::f2,  // base cell 1
-        id_t::f1,  // base cell 2
-        id_t::f2,  // base cell 3
-        id_t::f0,  // base cell 4
-        id_t::f1,  // base cell 5
-        id_t::f1,  // base cell 6
-        id_t::f2,  // base cell 7
-        id_t::f0,  // base cell 8
-        id_t::f2,  // base cell 9
-        id_t::f1,  // base cell 10
-        id_t::f1,  // base cell 11
-        id_t::f3,  // base cell 12
-        id_t::f3,  // base cell 13
-        id_t::f11, // base cell 14
-        id_t::f4,  // base cell 15
-        id_t::f0,  // base cell 16
-        id_t::f6,  // base cell 17
-        id_t::f0,  // base cell 18
-        id_t::f2,  // base cell 19
-        id_t::f7,  // base cell 20
-        id_t::f2,  // base cell 21
-        id_t::f0,  // base cell 22
-        id_t::f6,  // base cell 23
-        id_t::f10, // base cell 24
-        id_t::f6,  // base cell 25
-        id_t::f3,  // base cell 26
-        id_t::f11, // base cell 27
-        id_t::f4,  // base cell 28
-        id_t::f3,  // base cell 29
-        id_t::f0,  // base cell 30
-        id_t::f4,  // base cell 31
-        id_t::f5,  // base cell 32
-        id_t::f0,  // base cell 33
-        id_t::f7,  // base cell 34
-        id_t::f11, // base cell 35
-        id_t::f7,  // base cell 36
-        id_t::f10, // base cell 37
-        id_t::f12, // base cell 38
-        id_t::f6,  // base cell 39
-        id_t::f7,  // base cell 40
-        id_t::f4,  // base cell 41
-        id_t::f3,  // base cell 42
-        id_t::f3,  // base cell 43
-        id_t::f4,  // base cell 44
-        id_t::f6,  // base cell 45
-        id_t::f11, // base cell 46
-        id_t::f8,  // base cell 47
-        id_t::f5,  // base cell 48
-        id_t::f14, // base cell 49
-        id_t::f5,  // base cell 50
-        id_t::f12, // base cell 51
-        id_t::f10, // base cell 52
-        id_t::f4,  // base cell 53
-        id_t::f12, // base cell 54
-        id_t::f7,  // base cell 55
-        id_t::f11, // base cell 56
-        id_t::f10, // base cell 57
-        id_t::f13, // base cell 58
-        id_t::f10, // base cell 59
-        id_t::f11, // base cell 60
-        id_t::f9,  // base cell 61
-        id_t::f8,  // base cell 62
-        id_t::f6,  // base cell 63
-        id_t::f8,  // base cell 64
-        id_t::f9,  // base cell 65
-        id_t::f14, // base cell 66
-        id_t::f5,  // base cell 67
-        id_t::f16, // base cell 68
-        id_t::f8,  // base cell 69
-        id_t::f5,  // base cell 70
-        id_t::f12, // base cell 71
-        id_t::f7,  // base cell 72
-        id_t::f12, // base cell 73
-        id_t::f10, // base cell 74
-        id_t::f9,  // base cell 75
-        id_t::f13, // base cell 76
-        id_t::f16, // base cell 77
-        id_t::f15, // base cell 78
-        id_t::f15, // base cell 79
-        id_t::f16, // base cell 80
-        id_t::f14, // base cell 81
-        id_t::f13, // base cell 82
-        id_t::f5,  // base cell 83
-        id_t::f8,  // base cell 84
-        id_t::f14, // base cell 85
-        id_t::f9,  // base cell 86
-        id_t::f14, // base cell 87
-        id_t::f17, // base cell 88
-        id_t::f12, // base cell 89
-        id_t::f16, // base cell 90
-        id_t::f17, // base cell 91
-        id_t::f15, // base cell 92
-        id_t::f16, // base cell 93
-        id_t::f9,  // base cell 94
-        id_t::f15, // base cell 95
-        id_t::f13, // base cell 96
-        id_t::f8,  // base cell 97
-        id_t::f13, // base cell 98
-        id_t::f17, // base cell 99
-        id_t::f19, // base cell 100
-        id_t::f14, // base cell 101
-        id_t::f19, // base cell 102
-        id_t::f17, // base cell 103
-        id_t::f13, // base cell 104
-        id_t::f17, // base cell 105
-        id_t::f16, // base cell 106
-        id_t::f9,  // base cell 107
-        id_t::f15, // base cell 108
-        id_t::f15, // base cell 109
-        id_t::f18, // base cell 110
-        id_t::f18, // base cell 111
-        id_t::f19, // base cell 112
-        id_t::f17, // base cell 113
-        id_t::f19, // base cell 114
-        id_t::f18, // base cell 115
-        id_t::f18, // base cell 116
-        id_t::f19, // base cell 117
-        id_t::f19, // base cell 118
-        id_t::f18, // base cell 119
-        id_t::f19, // base cell 120
-        id_t::f18, // base cell 121
+        id_t::f1,  // 0 base cell
+        id_t::f2,  // 1
+        id_t::f1,  // 2
+        id_t::f2,  // 3
+        id_t::f0,  // 4
+        id_t::f1,  // 5
+        id_t::f1,  // 6
+        id_t::f2,  // 7
+        id_t::f0,  // 8
+        id_t::f2,  // 9
+        id_t::f1,  // 10
+        id_t::f1,  // 11
+        id_t::f3,  // 12
+        id_t::f3,  // 13
+        id_t::f11, // 14
+        id_t::f4,  // 15
+        id_t::f0,  // 16
+        id_t::f6,  // 17
+        id_t::f0,  // 18
+        id_t::f2,  // 19
+        id_t::f7,  // 20
+        id_t::f2,  // 21
+        id_t::f0,  // 22
+        id_t::f6,  // 23
+        id_t::f10, // 24
+        id_t::f6,  // 25
+        id_t::f3,  // 26
+        id_t::f11, // 27
+        id_t::f4,  // 28
+        id_t::f3,  // 29
+        id_t::f0,  // 30
+        id_t::f4,  // 31
+        id_t::f5,  // 32
+        id_t::f0,  // 33
+        id_t::f7,  // 34
+        id_t::f11, // 35
+        id_t::f7,  // 36
+        id_t::f10, // 37
+        id_t::f12, // 38
+        id_t::f6,  // 39
+        id_t::f7,  // 40
+        id_t::f4,  // 41
+        id_t::f3,  // 42
+        id_t::f3,  // 43
+        id_t::f4,  // 44
+        id_t::f6,  // 45
+        id_t::f11, // 46
+        id_t::f8,  // 47
+        id_t::f5,  // 48
+        id_t::f14, // 49
+        id_t::f5,  // 50
+        id_t::f12, // 51
+        id_t::f10, // 52
+        id_t::f4,  // 53
+        id_t::f12, // 54
+        id_t::f7,  // 55
+        id_t::f11, // 56
+        id_t::f10, // 57
+        id_t::f13, // 58
+        id_t::f10, // 59
+        id_t::f11, // 60
+        id_t::f9,  // 61
+        id_t::f8,  // 62
+        id_t::f6,  // 63
+        id_t::f8,  // 64
+        id_t::f9,  // 65
+        id_t::f14, // 66
+        id_t::f5,  // 67
+        id_t::f16, // 68
+        id_t::f8,  // 69
+        id_t::f5,  // 70
+        id_t::f12, // 71
+        id_t::f7,  // 72
+        id_t::f12, // 73
+        id_t::f10, // 74
+        id_t::f9,  // 75
+        id_t::f13, // 76
+        id_t::f16, // 77
+        id_t::f15, // 78
+        id_t::f15, // 79
+        id_t::f16, // 80
+        id_t::f14, // 81
+        id_t::f13, // 82
+        id_t::f5,  // 83
+        id_t::f8,  // 84
+        id_t::f14, // 85
+        id_t::f9,  // 86
+        id_t::f14, // 87
+        id_t::f17, // 88
+        id_t::f12, // 89
+        id_t::f16, // 90
+        id_t::f17, // 91
+        id_t::f15, // 92
+        id_t::f16, // 93
+        id_t::f9,  // 94
+        id_t::f15, // 95
+        id_t::f13, // 96
+        id_t::f8,  // 97
+        id_t::f13, // 98
+        id_t::f17, // 99
+        id_t::f19, // 100
+        id_t::f14, // 101
+        id_t::f19, // 102
+        id_t::f17, // 103
+        id_t::f13, // 104
+        id_t::f17, // 105
+        id_t::f16, // 106
+        id_t::f9,  // 107
+        id_t::f15, // 108
+        id_t::f15, // 109
+        id_t::f18, // 110
+        id_t::f18, // 111
+        id_t::f19, // 112
+        id_t::f17, // 113
+        id_t::f19, // 114
+        id_t::f18, // 115
+        id_t::f18, // 116
+        id_t::f19, // 117
+        id_t::f19, // 118
+        id_t::f18, // 119
+        id_t::f19, // 120
+        id_t::f18, // 121
     };
-
-    constexpr id_t internal_of(const cell::base::id_t base_cell_id) noexcept
-    {
-        return face_data[base_cell_id];
-    }
 
     id_t of(const cell::base::id_t base_cell_id) noexcept
     {
-        return internal_of(base_cell_id);
+        return face_data[base_cell_id];
     }
 
     bool is_cw_offset(const cell::base::id_t base_cell_id, const id_t face) noexcept
@@ -321,128 +316,128 @@ namespace kmx::geohex::icosahedron::face
     };
 
     static constexpr std::array<home_fijk_data, cell::base::count> home_fijk_array {{
-        {4u, id_t::f1},  // base cell 0:   {1, 0, 0}
-        {6u, id_t::f2},  // base cell 1:   {1, 1, 0}
-        {0u, id_t::f1},  // base cell 2:   {0, 0, 0}
-        {4u, id_t::f2},  // base cell 3:   {1, 0, 0}
-        {7u, id_t::f0},  // base cell 4:   {2, 0, 0}
-        {6u, id_t::f1},  // base cell 5:   {1, 1, 0}
-        {1u, id_t::f1},  // base cell 6:   {0, 0, 1}
-        {0u, id_t::f2},  // base cell 7:   {0, 0, 0}
-        {4u, id_t::f0},  // base cell 8:   {1, 0, 0}
-        {2u, id_t::f2},  // base cell 9:   {0, 1, 0}
-        {2u, id_t::f1},  // base cell 10:  {0, 1, 0}
-        {3u, id_t::f1},  // base cell 11:  {0, 1, 1}
-        {4u, id_t::f3},  // base cell 12:  {1, 0, 0}
-        {6u, id_t::f3},  // base cell 13:  {1, 1, 0}
-        {7u, id_t::f11}, // base cell 14:  {2, 0, 0}
-        {4u, id_t::f4},  // base cell 15:  {1, 0, 0}
-        {0u, id_t::f0},  // base cell 16:  {0, 0, 0}
-        {2u, id_t::f6},  // base cell 17:  {0, 1, 0}
-        {1u, id_t::f0},  // base cell 18:  {0, 0, 1}
-        {3u, id_t::f2},  // base cell 19:  {0, 1, 1}
-        {1u, id_t::f7},  // base cell 20:  {0, 0, 1}
-        {1u, id_t::f2},  // base cell 21:  {0, 0, 1}
-        {6u, id_t::f0},  // base cell 22:  {1, 1, 0}
-        {1u, id_t::f6},  // base cell 23:  {0, 0, 1}
-        {7u, id_t::f10}, // base cell 24:  {2, 0, 0}
-        {0u, id_t::f6},  // base cell 25:  {0, 0, 0}
-        {0u, id_t::f3},  // base cell 26:  {0, 0, 0}
-        {4u, id_t::f11}, // base cell 27:  {1, 0, 0}
-        {6u, id_t::f4},  // base cell 28:  {1, 1, 0}
-        {2u, id_t::f3},  // base cell 29:  {0, 1, 0}
-        {3u, id_t::f0},  // base cell 30:  {0, 1, 1}
-        {0u, id_t::f4},  // base cell 31:  {0, 0, 0}
-        {2u, id_t::f5},  // base cell 32:  {0, 1, 0}
-        {2u, id_t::f0},  // base cell 33:  {0, 1, 0}
-        {2u, id_t::f7},  // base cell 34:  {0, 1, 0}
-        {6u, id_t::f11}, // base cell 35:  {1, 1, 0}
-        {0u, id_t::f7},  // base cell 36:  {0, 0, 0}
-        {4u, id_t::f10}, // base cell 37:  {1, 0, 0}
-        {7u, id_t::f12}, // base cell 38:  {2, 0, 0}
-        {5u, id_t::f6},  // base cell 39:  {1, 0, 1}
-        {5u, id_t::f7},  // base cell 40:  {1, 0, 1}
-        {1u, id_t::f4},  // base cell 41:  {0, 0, 1}
-        {1u, id_t::f3},  // base cell 42:  {0, 0, 1}
-        {3u, id_t::f3},  // base cell 43:  {0, 1, 1}
-        {2u, id_t::f4},  // base cell 44:  {0, 1, 0}
-        {4u, id_t::f6},  // base cell 45:  {1, 0, 0}
-        {0u, id_t::f11}, // base cell 46:  {0, 0, 0}
-        {1u, id_t::f8},  // base cell 47:  {0, 0, 1}
-        {1u, id_t::f5},  // base cell 48:  {0, 0, 1}
-        {7u, id_t::f14}, // base cell 49:  {2, 0, 0}
-        {0u, id_t::f5},  // base cell 50:  {0, 0, 0}
-        {4u, id_t::f12}, // base cell 51:  {1, 0, 0}
-        {6u, id_t::f10}, // base cell 52:  {1, 1, 0}
-        {3u, id_t::f4},  // base cell 53:  {0, 1, 1}
-        {6u, id_t::f12}, // base cell 54:  {1, 1, 0}
-        {4u, id_t::f7},  // base cell 55:  {1, 0, 0}
-        {2u, id_t::f11}, // base cell 56:  {0, 1, 0}
-        {0u, id_t::f10}, // base cell 57:  {0, 0, 0}
-        {7u, id_t::f13}, // base cell 58:  {2, 0, 0}
-        {1u, id_t::f10}, // base cell 59:  {0, 0, 1}
-        {1u, id_t::f11}, // base cell 60:  {0, 0, 1}
-        {2u, id_t::f9},  // base cell 61:  {0, 1, 0}
-        {2u, id_t::f8},  // base cell 62:  {0, 1, 0}
-        {7u, id_t::f6},  // base cell 63:  {2, 0, 0}
-        {0u, id_t::f8},  // base cell 64:  {0, 0, 0}
-        {1u, id_t::f9},  // base cell 65:  {0, 0, 1}
-        {4u, id_t::f14}, // base cell 66:  {1, 0, 0}
-        {5u, id_t::f5},  // base cell 67:  {1, 0, 1}
-        {3u, id_t::f16}, // base cell 68:  {0, 1, 1}
-        {5u, id_t::f8},  // base cell 69:  {1, 0, 1}
-        {4u, id_t::f5},  // base cell 70:  {1, 0, 0}
-        {0u, id_t::f12}, // base cell 71:  {0, 0, 0}
-        {7u, id_t::f7},  // base cell 72:  {2, 0, 0}
-        {2u, id_t::f12}, // base cell 73:  {0, 1, 0}
-        {2u, id_t::f10}, // base cell 74:  {0, 1, 0}
-        {0u, id_t::f9},  // base cell 75:  {0, 0, 0}
-        {4u, id_t::f13}, // base cell 76:  {1, 0, 0}
-        {1u, id_t::f16}, // base cell 77:  {0, 0, 1}
-        {3u, id_t::f15}, // base cell 78:  {0, 1, 1}
-        {2u, id_t::f15}, // base cell 79:  {0, 1, 0}
-        {2u, id_t::f16}, // base cell 80:  {0, 1, 0}
-        {6u, id_t::f14}, // base cell 81:  {1, 1, 0}
-        {6u, id_t::f13}, // base cell 82:  {1, 1, 0}
-        {7u, id_t::f5},  // base cell 83:  {2, 0, 0}
-        {4u, id_t::f8},  // base cell 84:  {1, 0, 0}
-        {0u, id_t::f14}, // base cell 85:  {0, 0, 0}
-        {5u, id_t::f9},  // base cell 86:  {1, 0, 1}
-        {1u, id_t::f14}, // base cell 87:  {0, 0, 1}
-        {1u, id_t::f17}, // base cell 88:  {0, 0, 1}
-        {1u, id_t::f12}, // base cell 89:  {0, 0, 1}
-        {0u, id_t::f16}, // base cell 90:  {0, 0, 0}
-        {3u, id_t::f17}, // base cell 91:  {0, 1, 1}
-        {1u, id_t::f15}, // base cell 92:  {0, 0, 1}
-        {5u, id_t::f16}, // base cell 93:  {1, 0, 1}
-        {4u, id_t::f9},  // base cell 94:  {1, 0, 0}
-        {0u, id_t::f15}, // base cell 95:  {0, 0, 0}
-        {0u, id_t::f13}, // base cell 96:  {0, 0, 0}
-        {7u, id_t::f8},  // base cell 97:  {2, 0, 0}
-        {2u, id_t::f13}, // base cell 98:  {0, 1, 0}
-        {5u, id_t::f17}, // base cell 99:  {1, 0, 1}
-        {2u, id_t::f19}, // base cell 100: {0, 1, 0}
-        {2u, id_t::f14}, // base cell 101: {0, 1, 0}
-        {3u, id_t::f19}, // base cell 102: {0, 1, 1}
-        {2u, id_t::f17}, // base cell 103: {0, 1, 0}
-        {1u, id_t::f13}, // base cell 104: {0, 0, 1}
-        {0u, id_t::f17}, // base cell 105: {0, 0, 0}
-        {4u, id_t::f16}, // base cell 106: {1, 0, 0}
-        {7u, id_t::f9},  // base cell 107: {2, 0, 0}
-        {5u, id_t::f15}, // base cell 108: {1, 0, 1}
-        {4u, id_t::f15}, // base cell 109: {1, 0, 0}
-        {3u, id_t::f18}, // base cell 110: {0, 1, 1}
-        {1u, id_t::f18}, // base cell 111: {0, 0, 1}
-        {1u, id_t::f19}, // base cell 112: {0, 0, 1}
-        {4u, id_t::f17}, // base cell 113: {1, 0, 0}
-        {0u, id_t::f19}, // base cell 114: {0, 0, 0}
-        {2u, id_t::f18}, // base cell 115: {0, 1, 0}
-        {5u, id_t::f18}, // base cell 116: {1, 0, 1}
-        {7u, id_t::f19}, // base cell 117: {2, 0, 0}
-        {4u, id_t::f19}, // base cell 118: {1, 0, 0}
-        {0u, id_t::f18}, // base cell 119: {0, 0, 0}
-        {5u, id_t::f19}, // base cell 120: {1, 0, 1}
-        {4u, id_t::f18}, // base cell 121: {1, 0, 0}
+        {4u, id_t::f1},  // 0:   {1, 0, 0}
+        {6u, id_t::f2},  // 1:   {1, 1, 0}
+        {0u, id_t::f1},  // 2:   {0, 0, 0}
+        {4u, id_t::f2},  // 3:   {1, 0, 0}
+        {7u, id_t::f0},  // 4:   {2, 0, 0}
+        {6u, id_t::f1},  // 5:   {1, 1, 0}
+        {1u, id_t::f1},  // 6:   {0, 0, 1}
+        {0u, id_t::f2},  // 7:   {0, 0, 0}
+        {4u, id_t::f0},  // 8:   {1, 0, 0}
+        {2u, id_t::f2},  // 9:   {0, 1, 0}
+        {2u, id_t::f1},  // 10:  {0, 1, 0}
+        {3u, id_t::f1},  // 11:  {0, 1, 1}
+        {4u, id_t::f3},  // 12:  {1, 0, 0}
+        {6u, id_t::f3},  // 13:  {1, 1, 0}
+        {7u, id_t::f11}, // 14:  {2, 0, 0}
+        {4u, id_t::f4},  // 15:  {1, 0, 0}
+        {0u, id_t::f0},  // 16:  {0, 0, 0}
+        {2u, id_t::f6},  // 17:  {0, 1, 0}
+        {1u, id_t::f0},  // 18:  {0, 0, 1}
+        {3u, id_t::f2},  // 19:  {0, 1, 1}
+        {1u, id_t::f7},  // 20:  {0, 0, 1}
+        {1u, id_t::f2},  // 21:  {0, 0, 1}
+        {6u, id_t::f0},  // 22:  {1, 1, 0}
+        {1u, id_t::f6},  // 23:  {0, 0, 1}
+        {7u, id_t::f10}, // 24:  {2, 0, 0}
+        {0u, id_t::f6},  // 25:  {0, 0, 0}
+        {0u, id_t::f3},  // 26:  {0, 0, 0}
+        {4u, id_t::f11}, // 27:  {1, 0, 0}
+        {6u, id_t::f4},  // 28:  {1, 1, 0}
+        {2u, id_t::f3},  // 29:  {0, 1, 0}
+        {3u, id_t::f0},  // 30:  {0, 1, 1}
+        {0u, id_t::f4},  // 31:  {0, 0, 0}
+        {2u, id_t::f5},  // 32:  {0, 1, 0}
+        {2u, id_t::f0},  // 33:  {0, 1, 0}
+        {2u, id_t::f7},  // 34:  {0, 1, 0}
+        {6u, id_t::f11}, // 35:  {1, 1, 0}
+        {0u, id_t::f7},  // 36:  {0, 0, 0}
+        {4u, id_t::f10}, // 37:  {1, 0, 0}
+        {7u, id_t::f12}, // 38:  {2, 0, 0}
+        {5u, id_t::f6},  // 39:  {1, 0, 1}
+        {5u, id_t::f7},  // 40:  {1, 0, 1}
+        {1u, id_t::f4},  // 41:  {0, 0, 1}
+        {1u, id_t::f3},  // 42:  {0, 0, 1}
+        {3u, id_t::f3},  // 43:  {0, 1, 1}
+        {2u, id_t::f4},  // 44:  {0, 1, 0}
+        {4u, id_t::f6},  // 45:  {1, 0, 0}
+        {0u, id_t::f11}, // 46:  {0, 0, 0}
+        {1u, id_t::f8},  // 47:  {0, 0, 1}
+        {1u, id_t::f5},  // 48:  {0, 0, 1}
+        {7u, id_t::f14}, // 49:  {2, 0, 0}
+        {0u, id_t::f5},  // 50:  {0, 0, 0}
+        {4u, id_t::f12}, // 51:  {1, 0, 0}
+        {6u, id_t::f10}, // 52:  {1, 1, 0}
+        {3u, id_t::f4},  // 53:  {0, 1, 1}
+        {6u, id_t::f12}, // 54:  {1, 1, 0}
+        {4u, id_t::f7},  // 55:  {1, 0, 0}
+        {2u, id_t::f11}, // 56:  {0, 1, 0}
+        {0u, id_t::f10}, // 57:  {0, 0, 0}
+        {7u, id_t::f13}, // 58:  {2, 0, 0}
+        {1u, id_t::f10}, // 59:  {0, 0, 1}
+        {1u, id_t::f11}, // 60:  {0, 0, 1}
+        {2u, id_t::f9},  // 61:  {0, 1, 0}
+        {2u, id_t::f8},  // 62:  {0, 1, 0}
+        {7u, id_t::f6},  // 63:  {2, 0, 0}
+        {0u, id_t::f8},  // 64:  {0, 0, 0}
+        {1u, id_t::f9},  // 65:  {0, 0, 1}
+        {4u, id_t::f14}, // 66:  {1, 0, 0}
+        {5u, id_t::f5},  // 67:  {1, 0, 1}
+        {3u, id_t::f16}, // 68:  {0, 1, 1}
+        {5u, id_t::f8},  // 69:  {1, 0, 1}
+        {4u, id_t::f5},  // 70:  {1, 0, 0}
+        {0u, id_t::f12}, // 71:  {0, 0, 0}
+        {7u, id_t::f7},  // 72:  {2, 0, 0}
+        {2u, id_t::f12}, // 73:  {0, 1, 0}
+        {2u, id_t::f10}, // 74:  {0, 1, 0}
+        {0u, id_t::f9},  // 75:  {0, 0, 0}
+        {4u, id_t::f13}, // 76:  {1, 0, 0}
+        {1u, id_t::f16}, // 77:  {0, 0, 1}
+        {3u, id_t::f15}, // 78:  {0, 1, 1}
+        {2u, id_t::f15}, // 79:  {0, 1, 0}
+        {2u, id_t::f16}, // 80:  {0, 1, 0}
+        {6u, id_t::f14}, // 81:  {1, 1, 0}
+        {6u, id_t::f13}, // 82:  {1, 1, 0}
+        {7u, id_t::f5},  // 83:  {2, 0, 0}
+        {4u, id_t::f8},  // 84:  {1, 0, 0}
+        {0u, id_t::f14}, // 85:  {0, 0, 0}
+        {5u, id_t::f9},  // 86:  {1, 0, 1}
+        {1u, id_t::f14}, // 87:  {0, 0, 1}
+        {1u, id_t::f17}, // 88:  {0, 0, 1}
+        {1u, id_t::f12}, // 89:  {0, 0, 1}
+        {0u, id_t::f16}, // 90:  {0, 0, 0}
+        {3u, id_t::f17}, // 91:  {0, 1, 1}
+        {1u, id_t::f15}, // 92:  {0, 0, 1}
+        {5u, id_t::f16}, // 93:  {1, 0, 1}
+        {4u, id_t::f9},  // 94:  {1, 0, 0}
+        {0u, id_t::f15}, // 95:  {0, 0, 0}
+        {0u, id_t::f13}, // 96:  {0, 0, 0}
+        {7u, id_t::f8},  // 97:  {2, 0, 0}
+        {2u, id_t::f13}, // 98:  {0, 1, 0}
+        {5u, id_t::f17}, // 99:  {1, 0, 1}
+        {2u, id_t::f19}, // 100: {0, 1, 0}
+        {2u, id_t::f14}, // 101: {0, 1, 0}
+        {3u, id_t::f19}, // 102: {0, 1, 1}
+        {2u, id_t::f17}, // 103: {0, 1, 0}
+        {1u, id_t::f13}, // 104: {0, 0, 1}
+        {0u, id_t::f17}, // 105: {0, 0, 0}
+        {4u, id_t::f16}, // 106: {1, 0, 0}
+        {7u, id_t::f9},  // 107: {2, 0, 0}
+        {5u, id_t::f15}, // 108: {1, 0, 1}
+        {4u, id_t::f15}, // 109: {1, 0, 0}
+        {3u, id_t::f18}, // 110: {0, 1, 1}
+        {1u, id_t::f18}, // 111: {0, 0, 1}
+        {1u, id_t::f19}, // 112: {0, 0, 1}
+        {4u, id_t::f17}, // 113: {1, 0, 0}
+        {0u, id_t::f19}, // 114: {0, 0, 0}
+        {2u, id_t::f18}, // 115: {0, 1, 0}
+        {5u, id_t::f18}, // 116: {1, 0, 1}
+        {7u, id_t::f19}, // 117: {2, 0, 0}
+        {4u, id_t::f19}, // 118: {1, 0, 0}
+        {0u, id_t::f18}, // 119: {0, 0, 0}
+        {5u, id_t::f19}, // 120: {1, 0, 1}
+        {4u, id_t::f18}, // 121: {1, 0, 0}
     }};
 
     ijk home(const cell::base::id_t base_id) noexcept

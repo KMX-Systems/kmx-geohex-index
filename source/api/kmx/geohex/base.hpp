@@ -40,7 +40,7 @@ namespace kmx::geohex
     using digit_t = std::uint8_t;
     using vertex_no_t = std::uint8_t;
 
-    /// @brief Defines the different H3 index modes (cell, edge, vertex).
+    /// @brief Defines the different index modes (cell, edge, vertex).
     enum class index_mode_t : std::uint8_t
     {
         invalid,
@@ -50,7 +50,7 @@ namespace kmx::geohex
         vertex
     };
 
-    /// @brief Defines the 16 H3 grid resolutions, from 0 (coarsest) to 15 (finest).
+    /// @brief Defines the 16 grid resolutions, from 0 (coarsest) to 15 (finest).
     enum class resolution_t : std::uint8_t
     {
         r0,
@@ -71,7 +71,7 @@ namespace kmx::geohex
         r15
     };
 
-    /// @brief The total number of H3 resolutions available.
+    /// @brief The total number of resolutions available.
     constexpr auto resolution_count = +resolution_t::r15 + 1u;
 
     /// @brief Determines if a resolution is Class III (odd).
@@ -83,7 +83,7 @@ namespace kmx::geohex
         return (+res % 2u) != 0u;
     }
 
-    /// @brief Defines the 7 directions in the H3 grid system, including the center.
+    /// @brief Defines the 7 directions in the grid system, including the center.
     enum class direction_t : std::uint8_t
     {
         center,
@@ -96,7 +96,7 @@ namespace kmx::geohex
         invalid
     };
 
-    /// @brief The number of valid H3 directions (used for array sizing).
+    /// @brief The number of valid directions (used for array sizing).
     constexpr auto direction_count = +direction_t::invalid;
 
     /// @brief Defines error codes returned by library functions.

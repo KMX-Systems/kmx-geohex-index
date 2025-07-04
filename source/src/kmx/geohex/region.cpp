@@ -315,7 +315,7 @@ namespace kmx::geohex::region
         std::array<index, 7u> children_buffer;
 
         // 3. Main Compaction Loop
-        for (int r = +max_res; r > 0; --r)
+        for (std::uint8_t r = +max_res; r > 0; --r)
         {
             resolution_t current_res = static_cast<resolution_t>(r);
 
@@ -356,7 +356,7 @@ namespace kmx::geohex::region
                     // Use `std::remove_if` to efficiently remove all children from the work span
                     // by shifting non-children elements to the front.
                     auto new_end = std::remove_if(current_work_span.begin(), current_work_span.end(),
-                                                  [&](const index& cell)
+                                                  [&children_span](const index& cell)
                                                   {
                                                       // Check if `cell` is one of the children to be removed.
                                                       return std::binary_search(children_span.begin(), children_span.end(), cell);
@@ -410,6 +410,7 @@ namespace kmx::geohex::region
                 return error_t::memory_alloc;
             }
         }
+
         // From this point forward, no more allocations will occur.
 
         // 4. Prepare Buffers from the Vector's Storage
