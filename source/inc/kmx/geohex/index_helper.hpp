@@ -134,12 +134,12 @@ namespace kmx::geohex
         /// to `index_mode_t::vertex` before using this function. It blindly overwrites the
         /// bits at the `mode_dependent_pos`, which could corrupt an edge index if misused.
         ///
-        /// @param vertex_num The logical vertex number to encode. The valid range is [0-5].
+        /// @param vertex_no The logical vertex number to encode. The valid range is [0-5].
         ///                   While the internal masking handles larger values, callers should
         ///                   always provide a value within the valid range.
         ///
         /// @see vertex::from_cell, index_helper::set_mode, index_helper::vertex_number
-        void set_vertex_number(const std::uint8_t vertex_num) noexcept;
+        void set_vertex_number(const vertex_no_t vertex_no) noexcept;
 
     private:
         // Bitfield Layout Constants (snake_lower_case)

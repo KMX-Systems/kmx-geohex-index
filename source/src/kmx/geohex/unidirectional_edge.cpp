@@ -3,6 +3,7 @@
 #include "kmx/geohex/grid.hpp"
 #include "kmx/geohex/icosahedron/face.hpp"
 #include "kmx/geohex/index_helper.hpp"
+#include "kmx/geohex/traversal.hpp"
 #include "kmx/geohex/vertex.hpp"
 
 namespace kmx::geohex::unidirectional_edge
@@ -13,24 +14,30 @@ namespace kmx::geohex::unidirectional_edge
         return grid::distance(a, b) == 1;
     }
 
-    index from_cells(const index origin, const index destination) noexcept
+    [[nodiscard]] index from_cells(const index origin, const index destination) noexcept
     {
+        // 1. Input Validation
         if (!origin.is_valid() || !destination.is_valid() || (origin.resolution() != destination.resolution()))
-            return {};
+            return {}; // Return invalid index
 
-        // Find the direction from origin to destination.
-        // This requires an internal `get_neighbor_direction` function.
-        // direction_t dir = internal::get_neighbor_direction(origin, destination);
-        direction_t dir = direction_t::invalid; // Placeholder
+        // 2. Find the direction from origin to destination using the robust traversal primitive.
+        // This correctly handles all icosahedron face crossings and pentagon distortions.
+        coordinate::ijk relative_ijk;
+        if (index_to_local_ijk(origin, destination, relative_ijk) != error_t::none)
+            return {}; // Relationship between cells could not be determined.
 
-        if (dir == direction_t::invalid || dir == direction_t::center)
-            return {}; // Not valid neighbors
+        // 3. Convert the resulting local IJK vector into a direction digit.
+        // For immediate neighbors, this vector will be a unit vector in one of the 6 directions.
+        const direction_t dir = relative_ijk.to_digit();
 
-        // Create the edge index from the origin index.
+        // 4. Validate the direction. It must be a valid neighbor direction (K, J, JK, I, IK, IJ).
+        if ((dir < direction_t::k_axes) || (dir >= direction_t::invalid))
+            return {}; // Not immediate neighbors or an error occurred.
+
+        // 5. Construct the directed edge index.
         index_helper edge_helper {origin.value()};
         edge_helper.set_mode(index_mode_t::edge_unidirectional);
-        // The direction is stored in the mode-dependent bits.
-        edge_helper.set_digit(15u, static_cast<digit_t>(dir)); // Using a placeholder for mode-dependent bits
+        edge_helper.set_edge_direction(dir); // Use the dedicated helper for safety.
 
         return index {edge_helper.value()};
     }

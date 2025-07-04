@@ -113,4 +113,40 @@ namespace kmx::geohex::cell::boundary
         // 3. Get the boundary vertices using the core logic.
         return get_vertices(cell_center_fijk, index, out);
     }
+
+    error_t get_vertex_fijk(const index cell_index, const vertex_no_t vertex_no, icosahedron::face::ijk& out_vertex_fijk) noexcept
+    {
+        // 1. Input Validation
+        if (!cell_index.is_valid())
+            return error_t::cell_invalid;
+
+        const bool is_pent = cell_index.is_pentagon();
+        const std::uint8_t max_vertex = is_pent ? 4u : 5u;
+        if (vertex_no > max_vertex)
+            return error_t::vertex_invalid;
+
+        // 2. Get the FaceIJK of the cell's center. This is our starting point.
+        icosahedron::face::ijk center_fijk;
+        const error_t fijk_err = icosahedron::face::from_index(cell_index, center_fijk);
+        if (fijk_err != error_t::none)
+            return fijk_err;
+
+        // 3. Determine the direction vector to the desired vertex.
+        const resolution_t res = cell_index.resolution();
+        const auto& directions = vertex_directions[is_class_3(res)];
+        const coordinate::ijk& direction_vec = directions[vertex_no];
+
+        // 4. Calculate the vertex's FaceIJK by moving from the center.
+        out_vertex_fijk = center_fijk;
+        out_vertex_fijk.ijk_coords += direction_vec;
+
+        // 5. Apply pentagon-specific distortion if necessary.
+        if (is_pent)
+            out_vertex_fijk.ijk_coords.rotate_60ccw();
+
+        // 6. Normalize to snap to the correct integer grid coordinates.
+        out_vertex_fijk.ijk_coords.normalize();
+
+        return error_t::none;
+    }
 }

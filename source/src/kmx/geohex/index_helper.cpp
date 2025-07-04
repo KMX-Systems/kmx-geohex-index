@@ -230,7 +230,7 @@ namespace kmx::geohex
         return static_cast<std::uint8_t>((value_ >> mode_dependent_pos) & mode_dependent_mask);
     }
 
-    void index_helper::set_vertex_number(const std::uint8_t vertex_num) noexcept
+    void index_helper::set_vertex_number(const vertex_no_t vertex_no) noexcept
     {
         // 1. Create the inverted mask
         // This mask will have zeros at the position of the mode-dependent bits
@@ -245,11 +245,11 @@ namespace kmx::geohex
         value_ &= inverted_mask;
 
         // 3. Set the new bits
-        // a. Take the integer `vertex_num`, cast it to our value_t, and mask it to
+        // a. Take the integer `vertex_no`, cast it to our value_t, and mask it to
         //    ensure it doesn't exceed the 3-bit range (0-7). This is a safety measure.
         // b. Shift the masked value to the correct position.
         // c. Use a bitwise OR operation to merge the new bits into the cleared value.
-        value_ |= (static_cast<value_t>(vertex_num) & mode_dependent_mask) << mode_dependent_pos;
+        value_ |= (static_cast<value_t>(vertex_no) & mode_dependent_mask) << mode_dependent_pos;
     }
 
     // Detail-level Free Function Implementations
