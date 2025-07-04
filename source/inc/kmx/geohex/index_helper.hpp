@@ -142,6 +142,8 @@ namespace kmx::geohex
         void set_vertex_number(const vertex_no_t vertex_no) noexcept;
 
     private:
+        static std::uint8_t shift_from(const digit_index index) noexcept;
+
         // Bitfield Layout Constants (snake_lower_case)
         static constexpr std::uint8_t reserved_pos = 63u;
         static constexpr std::uint8_t mode_pos = 59u;

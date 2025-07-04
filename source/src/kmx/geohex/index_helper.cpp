@@ -3,7 +3,8 @@
 #include "kmx/geohex/index_helper.hpp"
 #include "kmx/geohex/base.hpp"             // For error_t, resolution_t etc.
 #include "kmx/geohex/icosahedron/face.hpp" // For ijk struct and functions
-#include "kmx/gis/wgs84/coordinate.hpp"    // For coordinate class
+#include "kmx/geohex/traversal.hpp"
+#include "kmx/gis/wgs84/coordinate.hpp" // For coordinate class
 
 #if defined(_MSC_VER) && defined(_M_X64)
     #include <intrin.h>
@@ -75,7 +76,7 @@ namespace kmx::geohex
             {
                 // Cell-Specific Validation
                 // A cell index must have its mode bits set to 1.
-                if ((value_ >> mode_pos) != 1)
+                if ((value_ >> mode_pos) != +index_mode_t::cell)
                     return false;
 
                 // Check for invalid digits (7) in the resolution part of the index.
@@ -88,17 +89,16 @@ namespace kmx::geohex
 
                 return true;
             }
-
             case index_mode_t::edge_unidirectional:
             {
                 // Unidirectional Edge-Specific Validation
                 // An edge index must have its mode bits set to 2.
-                if ((value_ >> mode_pos) != 2)
+                if ((value_ >> mode_pos) != +index_mode_t::edge_unidirectional)
                     return false;
 
                 // The edge direction, stored in the reserved bits, must be valid (1-6).
                 const auto dir = edge_direction();
-                if (dir < direction_t::k_axes || dir > direction_t::ij_axes)
+                if ((dir < direction_t::k_axes) || (dir > direction_t::ij_axes))
                     return false;
 
                 // Edges also must not have invalid digits.
@@ -107,16 +107,15 @@ namespace kmx::geohex
 
                 return true;
             }
-
             case index_mode_t::vertex:
             {
                 // Vertex-Specific Validation
                 // A vertex index must have its mode bits set to 5.
-                if ((value_ >> mode_pos) != 5)
+                if ((value_ >> mode_pos) != +index_mode_t::vertex)
                     return false;
 
                 // The vertex number, stored in reserved bits, must be valid (0-5).
-                if (vertex_number() > 5)
+                if (vertex_number() > 5u)
                     return false;
 
                 // Vertices also must not have invalid digits.
@@ -125,9 +124,7 @@ namespace kmx::geohex
 
                 return true;
             }
-
-                // Other modes like 'edge_bidirectional' could be added here.
-
+            // Other modes like 'edge_bidirectional' could be added here.
             case index_mode_t::invalid:
             default:
                 // Any other mode is, by definition, invalid.
@@ -170,30 +167,36 @@ namespace kmx::geohex
         value_ = (value_ & ~(base_cell_mask << base_cell_pos)) | (static_cast<value_t>(item) & base_cell_mask) << base_cell_pos;
     }
 
+    std::uint8_t index_helper::shift_from(const digit_index index) noexcept
+    {
+        return (max_resolution - 1u - index) * digit_size;
+    }
+
     digit_t index_helper::digit(const digit_index index) const noexcept
     {
         if (index >= digit_count())
             return 0u;
 
-        const auto shift = (max_resolution - 1 - index) * digit_size;
-        return (value_ >> shift) & digit_mask;
+        return (value_ >> shift_from(index)) & digit_mask;
     }
 
     void index_helper::set_digit(const digit_index index, const digit_t item) noexcept
     {
         if (index < digit_count())
         {
-            const auto shift = (max_resolution - 1 - index) * digit_size;
-            value_ = (value_ & ~(digit_mask << shift)) | (static_cast<value_t>(item) & digit_mask) << shift;
+            const auto shift = shift_from(index);
+            value_ = (value_ & ~(digit_mask << shift)) | ((static_cast<value_t>(item) & digit_mask) << shift);
         }
     }
 
     bool index_helper::set_digits_to_zero(const digit_index start, const digit_index end) noexcept
     {
-        if (start > end || end >= digit_count())
+        if ((start > end) || (end >= digit_count()))
             return false;
+
         for (digit_index i = start; i <= end; ++i)
             set_digit(i, 0u);
+
         return true;
     }
 
@@ -300,67 +303,100 @@ namespace kmx::geohex
     std::uint64_t children_count(const raw_index_t parent_idx, const resolution_t child_res) noexcept
     {
         const index_helper helper {parent_idx};
-        if (!helper.is_valid() || child_res <= helper.resolution())
-            return 0u;
+        if (!helper.is_valid() || (child_res <= helper.resolution()))
+            return {};
 
         const auto res_diff = +child_res - +helper.resolution();
-        return static_cast<std::uint64_t>(pow(7u, res_diff));
+
+        // The maximum possible res_diff is 15 (from res 0 to 15).
+        // 7^15 is a very large number, so std::uint64_t is the correct type.
+        const std::uint64_t num_children = unsafe_ipow<std::uint64_t>(7u, res_diff);
+
+        // This is the final piece: you must account for pentagons, which have fewer children.
+        // The cell::children_count function does this, but this free function was missing it.
+        return helper.is_pentagon() ?
+                   // This is the formula for pentagon children count.
+                   1u + 5u * (num_children - 1u) / 6u :
+                   num_children;
     }
 
-    error_t get_children(const raw_index_t parent_idx, const resolution_t child_res, std::span<raw_index_t>& out_children) noexcept
+    [[nodiscard]] error_t get_children(const raw_index_t parent_idx, const resolution_t child_res,
+                                       std::span<raw_index_t>& out_children) noexcept
     {
-        index_helper parent_helper {parent_idx};
-        const resolution_t parent_res = parent_helper.resolution();
+        const index parent_index {parent_idx};
+        const resolution_t parent_res = parent_index.resolution();
 
         // 1. Validate inputs.
-        if (!parent_helper.is_valid() || child_res <= parent_res)
+        if (!parent_index.is_valid() || (child_res <= parent_res))
         {
-            out_children = out_children.subspan(0u, 0u); // Ensure output span is empty
+            out_children = out_children.subspan(0u, 0u);
             return error_t::domain;
         }
 
         // 2. Validate the output buffer size.
         const auto required_size = children_count(parent_idx, child_res);
         if (out_children.size() < required_size)
-        {
             return error_t::buffer_too_small;
-        }
 
-        // 3. Core `cellToChildren` Algorithm
-        // This is a simplified representation of the C algorithm's logic.
-        // A full implementation is highly complex and depends on the rest of the internal API.
+        // 3. Core algorithm implementation.
+        const bool is_parent_pentagon = cell::pentagon::check(parent_index.base_cell());
+        const std::int32_t res_diff = +child_res - +parent_res;
+        const std::int32_t k_radius = unsafe_ipow<std::int32_t>(7, res_diff) / 2;
 
         std::size_t children_written {};
 
-        // a. Get the center child first. The center child has the same path as the
-        //    parent, just at a finer resolution with intermediate digits set to "center".
-        index_helper center_child_helper = parent_helper;
-        center_child_helper.set_resolution(child_res);
-        // The digits between parent_res and child_res are implicitly 0 (center).
-        out_children[children_written++] = center_child_helper.value();
-
-        // b. Generate the other 6 children by finding neighbors of the center child.
-        // This requires a full traversal implementation (k_ring or similar).
-        // For demonstration, we outline the logic:
-
-        // This is a placeholder for the actual complex logic which would involve:
-        //   for (direction_t dir : {k_axes, j_axes, ...}) {
-        //     raw_index_t neighbor = find_neighbor(center_child_helper.value(), dir);
-        //     out_children[children_written++] = neighbor;
-        //   }
-        // A correct implementation must handle pentagons, which have fewer children.
-
-        // For this example, we'll just fill the remaining slots with the parent index
-        // to show the structure. In a real implementation, you would generate real children.
-        for (std::size_t i = 1u; i < required_size; ++i)
+        // Iterate through all possible local IJK coordinates within the child group's k-ring.
+        for (std::int32_t i = -k_radius; i <= k_radius; ++i)
         {
-            // Placeholder: A real implementation would generate a unique child here.
-            out_children[children_written++] = parent_idx;
+            for (std::int32_t j = -k_radius; j <= k_radius; ++j)
+            {
+                const std::int32_t k = -i - j;
+                if (std::abs(k) > k_radius)
+                    continue;
+
+                coordinate::ijk local_ijk {i, j, k};
+
+                // For pentagons, the conceptual child grid is rotated.
+                if (is_parent_pentagon)
+                    local_ijk.rotate_60ccw();
+
+                // Check if this candidate is a true child by ascending the hierarchy.
+                coordinate::ijk parent_check_ijk = local_ijk;
+                for (std::int32_t r {}; r < res_diff; ++r)
+                {
+                    const bool is_class_3_res = is_class_3(static_cast<resolution_t>(+child_res - r));
+                    parent_check_ijk = parent_check_ijk.up_ap7_copy(is_class_3_res);
+                }
+
+                // If the ascended IJK is not the center, it's not a direct child.
+                if (parent_check_ijk.is_origin())
+                {
+                    // Convert the valid local IJK coordinate back into a global H3 index.
+                    index child_index {};
+                    const error_t err = local_ijk_to_index(parent_index, local_ijk, child_index);
+
+                    if (err == error_t::none)
+                    {
+                        if (children_written < required_size)
+                            out_children[children_written++] = child_index.value();
+                        else
+                            // This case should not be reached if required_size is correct.
+                            return error_t::failed;
+                    }
+                    else
+                    {
+                        out_children = out_children.subspan(0u, 0u);
+                        return err;
+                    }
+                }
+            }
         }
 
-        // 4. Resize the output span to the actual number of children generated.
-        out_children = out_children.subspan(0u, children_written);
+        // 4. Final validation and span resizing.
+        if (children_written != required_size)
+            return error_t::failed; // Indicates a logic error in the algorithm.
 
+        out_children = out_children.subspan(0u, children_written);
         return error_t::none;
     }
 
