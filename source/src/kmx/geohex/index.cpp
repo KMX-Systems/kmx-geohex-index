@@ -188,7 +188,7 @@ namespace kmx::geohex
 
     [[nodiscard]] index index::from_string(std::string_view str) noexcept
     {
-        // 1. Basic validation. An H3 string cannot be empty or too long.
+        // 1. Basic validation. An string cannot be empty or too long.
         if (str.empty() || str.length() > max_hex_string_length)
             return index {0u};
 

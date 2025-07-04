@@ -18,12 +18,12 @@ namespace kmx::geohex::grid
         return relative_ijk.distance_to({0, 0, 0});
     }
 
-    error_t k_ring(const index origin, const int k, std::span<index>& out_ring) noexcept
+    error_t k_ring(const index origin, const std::uint16_t k, std::span<index>& out_ring) noexcept
     {
-        if ((k < 0) || !origin.is_valid())
+        if (!origin.is_valid())
             return error_t::domain;
 
-        const std::size_t max_size = max_k_ring_size(k);
+        const auto max_size = max_k_ring_size(k);
         if (out_ring.size() < max_size)
             return error_t::buffer_too_small;
 
@@ -42,7 +42,7 @@ namespace kmx::geohex::grid
         // A buffer to hold neighbors for each cell. Size 6 is always sufficient.
         std::array<index, 6u> neighbor_buffer;
 
-        for (int ring_k = 1; ring_k <= k; ++ring_k)
+        for (std::uint16_t ring_k = 1u; ring_k <= k; ++ring_k)
         {
             std::vector<index> next_ring_frontier;
             next_ring_frontier.reserve(current_ring_frontier.size() * 6u);

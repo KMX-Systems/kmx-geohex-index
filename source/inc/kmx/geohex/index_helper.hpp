@@ -44,7 +44,7 @@ namespace kmx::geohex
         index_helper& operator=(index_helper&&) = default;
 
         /// @brief Validates the index based on its bit pattern.
-        /// @return True if the index is a valid H3 cell, false otherwise.
+        /// @return True if the index is a valid cell, false otherwise.
         [[nodiscard]] bool is_valid() const noexcept;
 
         /// @brief Checks if the index is a pentagon.
@@ -60,7 +60,7 @@ namespace kmx::geohex
         void set_mode(index_mode_t item) noexcept;
 
         /// @brief Gets the resolution of the index.
-        /// @return The H3 resolution (0-15).
+        /// @return The resolution (0-15).
         [[nodiscard]] resolution_t resolution() const noexcept;
 
         /// @brief Sets the resolution of the index.
@@ -68,7 +68,7 @@ namespace kmx::geohex
         void set_resolution(resolution_t item) noexcept;
 
         /// @brief Gets the base cell of the index.
-        /// @return The H3 base cell (0-121).
+        /// @return The base cell (0-121).
         [[nodiscard]] cell::base::id_t base_cell() const noexcept;
 
         /// @brief Sets the base cell of the index.
@@ -191,12 +191,12 @@ namespace kmx::geohex
     ///          internal representation into the final 64-bit index.
     /// @ref geoToH3
     /// @param coord The WGS84 geographic coordinate, with latitude and longitude in radians.
-    /// @param res The target H3 resolution (from `resolution_t::r0` to `resolution_t::r15`).
+    /// @param res The target resolution (from `resolution_t::r0` to `resolution_t::r15`).
     /// @return The raw 64-bit index. Returns 0 (an invalid index) on failure or if
     ///         the input coordinate is invalid.
     [[nodiscard]] raw_index_t from_wgs(const gis::wgs84::coordinate& coord, const resolution_t res) noexcept;
 
-    /// @brief Calculates the number of children an H3 cell has at a finer resolution.
+    /// @brief Calculates the number of children an cell has at a finer resolution.
     /// @details The number of children is determined by the aperture of the grid (7). This
     ///          function correctly handles the reduced number of children for pentagonal
     ///          cells, which have 5 or 6 children at resolution 1 depending on their
@@ -209,11 +209,11 @@ namespace kmx::geohex
     ///         child resolution is not greater than the parent's.
     [[nodiscard]] std::uint64_t children_count(const raw_index_t parent_idx, const resolution_t child_res) noexcept;
 
-    /// @brief Gets the H3 indexes of all children of a parent cell at a specified finer resolution.
+    /// @brief Gets the indexes of all children of a parent cell at a specified finer resolution.
     /// @details This is the internal, non-allocating worker function. The caller must
     ///          provide a buffer of sufficient size.
     /// @ref cellToChildren
-    /// @param parent_idx The raw 64-bit H3 index of the parent cell.
+    /// @param parent_idx The raw 64-bit index of the parent cell.
     /// @param child_res The desired child resolution.
     /// @param[out] out_children A span that will be filled with the raw 64-bit child indexes.
     ///                        Its size will be adjusted to the actual number of children written.
@@ -221,7 +221,7 @@ namespace kmx::geohex
     [[nodiscard]] error_t get_children(const raw_index_t parent_idx, const resolution_t child_res,
                                        std::span<raw_index_t>& out_children) noexcept;
 
-    /// @brief Finds the parent of an H3 cell at a specified coarser resolution.
+    /// @brief Finds the parent of an cell at a specified coarser resolution.
     /// @details This is achieved by ascending the grid hierarchy, which involves zeroing out
     ///          the digits of the child index that are finer than the requested parent
     ///          resolution and updating the resolution bits accordingly.

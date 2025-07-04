@@ -206,7 +206,7 @@ namespace kmx::geohex::icosahedron::face
     }
 
     /// @ref getIcosahedronFaces
-    /// @brief Determines the set of icosahedron faces a given H3 cell intersects.
+    /// @brief Determines the set of icosahedron faces a given cell intersects.
     error_t get_intersected(const index index, std::span<no_t>& output) noexcept
     {
         if (!index.is_valid())
@@ -447,8 +447,8 @@ namespace kmx::geohex::icosahedron::face
     }
 
     /// @ref _h3ToFaceIjk (H3 C internal)
-    /// @brief Converts an H3 cell index to its corresponding FaceIJK representation.
-    /// @param index The H3 cell index.
+    /// @brief Converts an cell index to its corresponding FaceIJK representation.
+    /// @param index The cell index.
     /// @param out Output: The FaceIJK representation.
     /// @return error_t::none on success, or an error code.
     error_t from(const index index, ijk& out) noexcept
@@ -938,7 +938,7 @@ namespace kmx::geohex::icosahedron::face
     }
 
     // This is the full inverse of `from_index`. It takes a FaceIJK and produces
-    // a valid H3 index. This is the missing link needed for vertex creation.
+    // a valid index. This is the missing link needed for vertex creation.
     // In a real project, this would live in the `icosahedron::face` namespace.
     error_t to_index(const ijk& fijk, const resolution_t res, index& out_index) noexcept
     {
@@ -1208,7 +1208,7 @@ namespace kmx::geohex::icosahedron::face
         return adjust_hexagon_overage(start_fijk, res, dir, out_neighbor_fijk);
     }
 
-    /// @brief H3 internal lookup table `pentagonDirectionFaces`.
+    /// @brief internal lookup table `pentagonDirectionFaces`.
     /// @details This table is critical for grid traversal across icosahedron face
     /// boundaries near pentagons. For a given pentagon (by its local 0-11 index)
     /// and a neighbor direction, it provides the `FaceIJK` coordinates on the
@@ -1348,7 +1348,7 @@ namespace kmx::geohex::icosahedron::face
         if (!cell::pentagon::check(base_cell_id))
             return error_t::none;
 
-        // The H3 algorithm for pentagon distortion is complex. It involves
+        // The algorithm for pentagon distortion is complex. It involves
         // looking up pre-computed new face data and rotations.
         const auto optional_local_pent_idx = cell::pentagon::get_index(base_cell_id);
         if (!optional_local_pent_idx)
@@ -1363,14 +1363,14 @@ namespace kmx::geohex::icosahedron::face
             return error_t::pentagon;
 
         // Look up the required rotation for this specific face crossing.
-        // H3 has precomputed tables for this (`_pentagonCwOffset`).
+        // has precomputed tables for this (`_pentagonCwOffset`).
         const auto [cw_offset_face, cw_offset_rot] = cell::pentagon::clockwise_offsets(base_cell_id);
 
         // Apply the pre-computed adjustment from the lookup tables.
         current_face = new_face_data->face;
 
         // The new coordinates are simply the coordinates on the new face's system.
-        // The H3 tables store these as simple unit vectors.
+        // The tables store these as simple unit vectors.
         ijk_coords_to_adjust = new_face_data->ijk_coords;
 
         // Update the system's rotation.

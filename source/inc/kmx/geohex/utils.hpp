@@ -41,29 +41,29 @@ namespace kmx::geohex
     using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
 
     /// @brief Rotates a direction 60 degrees counter-clockwise.
-    /// @details This is a simple rotational transform on the 7 H3 directions.
+    /// @details This is a simple rotational transform on the 7 directions.
     ///          The `CENTER` direction remains unchanged.
     /// @param digit The initial direction.
     /// @return The rotated direction.
     direction_t rotate_60ccw(const direction_t digit) noexcept;
 
     /// @brief Rotates a direction 60 degrees clockwise.
-    /// @details This is a simple rotational transform on the 7 H3 directions.
+    /// @details This is a simple rotational transform on the 7 directions.
     ///          The `CENTER` direction remains unchanged.
     /// @param digit The initial direction.
     /// @return The rotated direction.
     direction_t rotate_60cw(const direction_t digit) noexcept;
 
-    /// @brief Retrieves the scaling factor for a given H3 resolution.
+    /// @brief Retrieves the scaling factor for a given resolution.
     /// @details This factor is used to scale normalized IJK coordinates to the correct
     ///          magnitude for a specific resolution's gnomonic projection plane.
     /// @ref H3's `UNIT_VEC_SCALES` constant array.
-    /// @param resolution The H3 resolution.
+    /// @param resolution The resolution.
     /// @return The resolution-specific scaling factor.
     double scaling_factor(const resolution_t resolution) noexcept;
 
     /// @brief Rounds floating-point cube coordinates to the nearest integer cube coordinate.
-    /// @details This is a fundamental algorithm in H3 for converting from a continuous
+    /// @details This is a fundamental algorithm in for converting from a continuous
     ///          (projected) space to the discrete hexagonal grid. It rounds each component
     ///          to the nearest integer, then adjusts the component with the largest rounding
     ///          error to ensure the `i + j + k = 0` invariant is maintained.

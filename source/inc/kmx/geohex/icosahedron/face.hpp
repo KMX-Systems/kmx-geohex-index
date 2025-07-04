@@ -81,11 +81,11 @@ namespace kmx::geohex::icosahedron::face
     /// @return `true` if the face is a clockwise-offset neighbor of the pentagon.
     bool is_cw_offset(const cell::base::id_t base_cell_id, const id_t face) noexcept;
 
-    /// @brief Finds all icosahedron faces that a given H3 cell's boundary intersects.
+    /// @brief Finds all icosahedron faces that a given cell's boundary intersects.
     /// @details A cell can span across the edges of multiple icosahedron faces, especially
     ///          at coarser resolutions or near icosahedron vertices (pentagons).
     /// @ref getIcosahedronFaces
-    /// @param index The H3 cell index.
+    /// @param index The cell index.
     /// @param[out] output A span to be filled with the unique face IDs. The span will be
     ///                    resized to the actual number of faces found.
     /// @return `error_t::none` on success.
@@ -105,7 +105,7 @@ namespace kmx::geohex::icosahedron::face
     gis::wgs84::coordinate center_wgs(const id_t face) noexcept;
 
     /// @brief Represents a coordinate on a specific icosahedron face.
-    /// @details This is the core internal representation for a point in the H3 system. It
+    /// @details This is the core internal representation for a point in the system. It
     ///          combines a face ID with IJK coordinates on that face's planar grid.
     /// @ref FaceIJK
     struct ijk
@@ -129,7 +129,7 @@ namespace kmx::geohex::icosahedron::face
     ///          60-degree rotations applied to the IJK coordinate system. This is
     ///          essential for tracking the system's orientation during grid traversals
     ///          that cross face boundaries.
-    /// @note This is analogous to H3 C's internal `FaceOrientIJK` struct.
+    /// @note This is analogous to C's internal `FaceOrientIJK` struct.
     struct oriented_ijk: ijk
     {
         /// Number of counter-clockwise 60-degree rotations vs the face's canonical orientation.
@@ -139,23 +139,23 @@ namespace kmx::geohex::icosahedron::face
         constexpr bool operator!=(const oriented_ijk&) const noexcept = default;
     };
 
-    /// @brief Converts an H3 cell index to its corresponding `FaceIJK` representation.
-    /// @details This is a fundamental conversion that "unpacks" an H3 index into the
+    /// @brief Converts an cell index to its corresponding `FaceIJK` representation.
+    /// @details This is a fundamental conversion that "unpacks" an index into the
     ///          internal coordinate system used for most algorithms.
     /// @ref _h3ToFaceIjk (H3 C internal)
-    /// @param index The H3 cell index.
+    /// @param index The cell index.
     /// @param[out] out The structure to fill with the `FaceIJK` representation.
     /// @return `error_t::none` on success, or an error code if the index is invalid.
     error_t from_index(const index index, ijk& out) noexcept;
 
-    /// @brief Converts a `FaceIJK` representation back into a canonical H3 index.
+    /// @brief Converts a `FaceIJK` representation back into a canonical index.
     /// @details This is the inverse of `from_index`. It "packs" the internal face and
-    ///          IJK coordinates into the 64-bit H3 index format by determining the
+    ///          IJK coordinates into the 64-bit index format by determining the
     ///          appropriate base cell and sequence of direction digits.
     /// @ref _faceIjkToH3
     /// @param fijk The `FaceIJK` to convert.
-    /// @param res The resolution for the output H3 index.
-    /// @param[out] out_index The resulting H3 index.
+    /// @param res The resolution for the output index.
+    /// @param[out] out_index The resulting index.
     /// @return `error_t::none` on success.
     error_t to_index(const ijk& fijk, resolution_t res, index& out_index) noexcept;
 
@@ -180,7 +180,7 @@ namespace kmx::geohex::icosahedron::face
     //           corresponding IJK coordinates on that face's grid.
     /// @ref _geoToFaceIjk (H3 C internal)
     /// @param coord The WGS84 geographic coordinate (in radians).
-    /// @param res The target H3 resolution.
+    /// @param res The target resolution.
     /// @param[out] out_fijk The resulting `FaceIJK` representation.
     /// @return `error_t::none` on success.
     error_t from_wgs(const gis::wgs84::coordinate& coord, const resolution_t res, ijk& out_fijk) noexcept;
@@ -219,9 +219,9 @@ namespace kmx::geohex::icosahedron::face
     /// @return `error_t::none` on success, or an error propagated from the core adjustment logic.
     error_t adjust_overage(oriented_ijk& fijk, const resolution_t res, const direction_t digit) noexcept;
 
-    /// @brief Determines the H3 base cell and resolution-0 orientation for a given `FaceIJK`.
-    /// @details This is a key part of the reverse mapping from coordinates to an H3 index,
-    ///          corresponding to the core logic of `_faceIjkToH3` in the H3 C library.
+    /// @brief Determines the base cell and resolution-0 orientation for a given `FaceIJK`.
+    /// @details This is a key part of the reverse mapping from coordinates to an index,
+    ///          corresponding to the core logic of `_faceIjkToH3` in the C library.
     /// @param fijk The `FaceIJK` coordinates to find the base cell for.
     /// @param res The resolution of the provided `fijk`.
     /// @param[out] out_base_cell The determined base cell ID (0-121).
@@ -230,7 +230,7 @@ namespace kmx::geohex::icosahedron::face
     error_t to_base_cell_and_orientation(const ijk& fijk, const resolution_t res, cell::base::id_t& out_base_cell,
                                          int& out_orientation) noexcept;
 
-    /// @brief Simplified helper to determine the H3 base cell for a given `FaceIJK`.
+    /// @brief Simplified helper to determine the base cell for a given `FaceIJK`.
     /// @param fijk The `FaceIJK` coordinates.
     /// @param res The resolution of the provided `fijk`.
     /// @return The base cell ID (0-121), or `base::invalid_index` on failure.
@@ -252,7 +252,7 @@ namespace kmx::geohex::icosahedron::face
     ///          coordinate system. If they have, it calls the appropriate low-level adjustment
     ///          function based on whether the origin cell was a hexagon or a pentagon.
     /// @param start_fijk The `FaceIJK` of the starting cell.
-    /// @param res The H3 resolution of the grid.
+    /// @param res The resolution of the grid.
     /// @param dir The direction to move to find the neighbor.
     /// @param[out] out_neighbor_fijk The resulting `FaceIJK` of the neighbor cell.
     /// @return `error_t::none` on success.

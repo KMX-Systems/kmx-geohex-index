@@ -26,10 +26,10 @@ namespace kmx::geohex::projection
     /// @brief Converts FaceIJK coordinates to a 3D Cartesian vector on the unit sphere.
     /// @details This function takes a coordinate on a specific icosahedron face's planar
     ///          grid and projects it onto the 3D sphere. This is a critical step in
-    ///          converting an H3 index or vertex back to a real-world geographic point.
+    ///          converting an index or vertex back to a real-world geographic point.
     /// @ref _faceIjkToXYZ (H3 C internal, related to _faceIjkToGeoEx from faceijk.c)
     /// @param fijk_coords The FaceIJK representation of the point.
-    /// @param res The H3 resolution of the grid system for the `fijk_coords`.
+    /// @param res The resolution of the grid system for the `fijk_coords`.
     /// @param[out] out_v3 The structure to fill with the resulting 3D vector.
     /// @return `error_t::none` on success.
     error_t to_v3d(const icosahedron::face::ijk& fijk_coords, resolution_t res, math::vector3d& out_v3) noexcept;
@@ -54,7 +54,7 @@ namespace kmx::geohex::projection
     /// @ref _hex2dToCoordIJK (H3 C internal)
     /// @param raw_uv_on_face The UV coordinates from the gnomonic projection, before any
     ///                       resolution-specific transformations.
-    /// @param res The target H3 resolution for the IJK coordinates.
+    /// @param res The target resolution for the IJK coordinates.
     /// @param[out] out_ijk The structure to fill with the resulting integer IJK coordinates.
     /// @return `error_t::none` on success.
     error_t to_ijk(const math::vector2d& raw_uv_on_face, const resolution_t res, coordinate::ijk& out_ijk) noexcept;

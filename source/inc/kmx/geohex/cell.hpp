@@ -15,7 +15,7 @@ namespace kmx::geohex::cell
     using children_count_t = std::uint64_t;
 
     /// @brief The number of children a hexagonal cell has at the next immediate finer resolution.
-    /// @details This constant represents the "aperture" of the H3 grid system, which is 7.
+    /// @details This constant represents the "aperture" of the grid system, which is 7.
     ///          It is the base for all child count calculations.
     constexpr children_count_t base_children_count = 7u;
 
@@ -36,7 +36,7 @@ namespace kmx::geohex::cell
     ///          dispatches to the appropriate logic for hexagonal and pentagonal parent
     ///          cells.
     /// @ref cellToChildrenSize
-    /// @param index The parent H3 cell index.
+    /// @param index The parent cell index.
     /// @param child_resolution The resolution of the children (must be finer than the
     ///                         parent's resolution).
     /// @return The exact number of children. Returns 0 if `child_resolution` is not

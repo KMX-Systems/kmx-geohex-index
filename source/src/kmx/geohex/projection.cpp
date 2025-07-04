@@ -52,7 +52,7 @@ namespace kmx::geohex::projection
         const auto face_center_v3 = icosahedron::face::center_point(fijk_coords.face);
 
         // Create an ad-hoc orthonormal basis for the tangent plane at the face center.
-        // This is the most complex part to port correctly without the H3 tables.
+        // This is the most complex part to port correctly without the tables.
         // We'll use a standard approach to create a basis from a single vector.
         math::vector3d u_vec, v_vec;
         if (std::abs(face_center_v3.x) > std::abs(face_center_v3.y))

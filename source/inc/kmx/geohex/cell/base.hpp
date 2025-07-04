@@ -23,7 +23,7 @@ namespace kmx::geohex::cell::base
 
     /// @brief Creates a resolution-0 index from a base cell number.
     /// @details This is a convenient factory function for creating the 122 root cells
-    ///          of the H3 hierarchy.
+    ///          of the hierarchy.
     /// @ref baseCellNumToCell
     /// @param no The base cell number (0-121).
     /// @return A valid resolution-0 `kmx::geohex::index` for the given base cell.
@@ -60,7 +60,7 @@ namespace kmx::geohex::cell::base
 
     /// @brief Checks if a base cell is a polar pentagon.
     /// @details The two polar pentagons (at the north and south poles) have distinct
-    ///          properties in some H3 algorithms.
+    ///          properties in some algorithms.
     /// @ref _isBaseCellPolarPentagon
     /// @param item The ID of the base cell to check.
     /// @return `true` if the base cell is one of the two polar pentagons (4 or 117),
@@ -87,10 +87,10 @@ namespace kmx::geohex::cell::base
     const rotations_60ccw_per_direction_array& rotations_60ccw(const id_t base_cell_id) noexcept;
 
     /// @brief Gets the canonical orientation of a base cell relative to its icosahedron face.
-    /// @details In the H3 grid system, some base cells are rotated 60 degrees CCW
+    /// @details In the grid system, some base cells are rotated 60 degrees CCW
     ///          relative to the canonical orientation of their parent icosahedron face.
     ///          This is a fundamental property used in coordinate system transformations.
-    /// @ref baseCellData (specifically, the `isRes1Rotated` field in the H3 source).
+    /// @ref baseCellData (specifically, the `isRes1Rotated` field in the source).
     /// @param base_cell_id The ID of the base cell.
     /// @return `1` if the base cell is rotated, `0` otherwise.
     constexpr std::int8_t get_canonical_orientation(const id_t base_cell_id) noexcept

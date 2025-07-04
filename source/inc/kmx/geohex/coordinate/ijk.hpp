@@ -195,7 +195,7 @@ namespace kmx::geohex::coordinate
         /// @brief Determines the leading non-zero direction digit for this coordinate.
         /// @details This is used to find the first step in the path from the base cell
         ///          to this coordinate, which is a key part of converting an IJK coordinate
-        ///          back into a canonical H3 index.
+        ///          back into a canonical index.
         /// @ref _h3LeadingNonZeroDigit
         /// @param res The resolution of the grid system this coordinate exists in.
         /// @return The `direction_t` of the first non-center digit.
@@ -206,7 +206,7 @@ namespace kmx::geohex::coordinate
     };
 
     /// @brief Creates a unit IJK vector for a given direction.
-    /// @details This lookup table maps each of the 7 H3 directions to its corresponding
+    /// @details This lookup table maps each of the 7 directions to its corresponding
     ///          unit vector in the IJK cube coordinate system.
     /// @ref _neighbor
     /// @param direction The direction enum.

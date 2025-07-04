@@ -24,21 +24,21 @@ namespace kmx::geohex::region
     /// @details This function is guaranteed not to throw exceptions.
     /// @ref maxPolyfillSize
     /// @param polygon A read-only span of WGS84 coordinates defining the polygon boundary.
-    /// @param res The target H3 resolution.
+    /// @param res The target resolution.
     /// @return The estimated maximum number of cells.
     [[nodiscard]] std::size_t max_polyfill_size(std::span<const gis::wgs84::coordinate> polygon, const resolution_t res) noexcept;
 
-    /// @brief Fills a geographic polygon with H3 cells (allocating version).
+    /// @brief Fills a geographic polygon with cells (allocating version).
     /// @details This function returns a `std::vector` and may allocate memory, which can
     ///          throw `std::bad_alloc`. It is NOT marked `noexcept`.
     /// @ref polyfill
     [[nodiscard]] std::vector<index> polyfill(std::span<const gis::wgs84::coordinate> polygon, const resolution_t res);
 
-    /// @brief Fills a geographic polygon with H3 cells (non-allocating version).
+    /// @brief Fills a geographic polygon with cells (non-allocating version).
     /// @details This function is guaranteed not to throw exceptions. Use `max_polyfill_size`
     ///          to determine the required buffer size for `out_cells`.
     /// @ref polyfill
-    /// @param[out] out_cells A span to be filled with the resulting H3 indexes. The span
+    /// @param[out] out_cells A span to be filled with the resulting indexes. The span
     ///                       will be resized to the actual number of cells written.
     /// @return `error_t::none` on success.
     error_t polyfill(std::span<const gis::wgs84::coordinate> polygon, const resolution_t res, std::span<index>& out_cells) noexcept;
@@ -48,7 +48,7 @@ namespace kmx::geohex::region
     /// @brief Calculates the number of cells that will result from uncompacting a set.
     /// @details This function is guaranteed not to throw exceptions.
     /// @ref uncompactCellsSize
-    /// @param compacted_cells A read-only span of the compacted set of H3 indexes.
+    /// @param compacted_cells A read-only span of the compacted set of indexes.
     /// @param res The target resolution to uncompact to.
     /// @return The exact number of cells in the uncompacted set, or 0 on error.
     [[nodiscard]] std::size_t uncompact_size(std::span<const index> compacted_cells, const resolution_t res) noexcept;
@@ -78,7 +78,7 @@ namespace kmx::geohex::region
     ///          memory allocations. It requires the caller to provide both a destination
     ///          buffer and a temporary workspace buffer.
     /// @ref compactCells
-    /// @param cells A read-only span of H3 indexes to compact.
+    /// @param cells A read-only span of indexes to compact.
     /// @param[out] out_compacted A span to be filled with the compacted set. Its size must be
     ///                         at least `cells.size()`. It will be resized to the actual output size.
     /// @param[in,out] workspace A mutable span for temporary calculations. Its size must be
@@ -92,7 +92,7 @@ namespace kmx::geohex::region
     ///          to serve as temporary workspace, minimizing or eliminating dynamic memory
     ///          allocations in repeated calls. The function is guaranteed not to throw,
     ///          converting potential memory allocation failures into an error code.
-    /// @param cells A read-only span of H3 indexes to be compacted.
+    /// @param cells A read-only span of indexes to be compacted.
     /// @param[out] out_compacted A vector that will be cleared and then filled with the
     ///                         compacted result. Its capacity may be increased if insufficient.
     /// @return `error_t::none` on success, `error_t::memory_alloc` on allocation failure.

@@ -10,8 +10,8 @@ namespace kmx::geohex::grid
     /// @brief Calculates the grid distance (number of cells) between two indexes.
     /// @details This function is guaranteed not to throw exceptions.
     /// @ref h3Distance
-    /// @param a The first H3 index.
-    /// @param b The second H3 index.
+    /// @param a The first index.
+    /// @param b The second index.
     /// @return The grid distance, or a negative value if the distance cannot be computed.
     [[nodiscard]] int distance(const index a, const index b) noexcept;
 
@@ -22,13 +22,15 @@ namespace kmx::geohex::grid
     /// @ref maxKringSize
     /// @param k The grid distance (k >= 0).
     /// @return The maximum possible number of cells in the k-ring.
-    [[nodiscard]] constexpr std::size_t max_k_ring_size(const int k) noexcept
+    [[nodiscard]] constexpr std::uint32_t max_k_ring_size(const std::uint16_t k) noexcept
     {
-        if (k < 0)
-            return 0u;
+        static constexpr std::uint16_t max_practical_k = 439u;
+        if (k > max_practical_k)
+            return {};
 
         // The formula for the max number of cells in a k-ring is 3k(k+1) + 1.
-        return static_cast<std::size_t>(3u) * k * (k + 1u) + 1u;
+        const std::uint32_t k_s = k;
+        return 3u * k_s * (k_s + 1u) + 1u;
     }
 
     /// @brief Finds all cells within a grid distance `k` of an origin cell.
@@ -37,19 +39,19 @@ namespace kmx::geohex::grid
     ///          by `max_k_ring_size()`. On success, the output span is resized to the
     ///          actual number of cells found.
     /// @ref kRing
-    /// @param origin The origin H3 index.
+    /// @param origin The origin index.
     /// @param k The grid distance (k >= 0).
     /// @param[out] out_ring A span to be filled with the k-ring indexes.
     /// @return `error_t::none` on success, or `error_t::buffer_too_small`.
-    error_t k_ring(const index origin, const int k, std::span<index>& out_ring) noexcept;
+    error_t k_ring(const index origin, const std::uint16_t k, std::span<index>& out_ring) noexcept;
 
     // Path Functions
 
     /// @brief Calculates the exact number of cells in the path between two indexes.
     /// @details The size of the path is `grid_distance + 1`. This function is guaranteed
     ///          not to throw exceptions.
-    /// @param start The starting H3 index.
-    /// @param end The ending H3 index.
+    /// @param start The starting index.
+    /// @param end The ending index.
     /// @return The exact number of cells in the path, or 0 on error.
     [[nodiscard]] std::size_t path_cells_size(const index start, const index end) noexcept;
 
@@ -59,7 +61,7 @@ namespace kmx::geohex::grid
     ///          by `path_cells_size()`. On success, the output span is resized to the
     ///          actual number of cells found.
     /// @ref h3Line
-    /// @param start The starting H3 index.
+    /// @param start The starting index.
     /// @param end The ending H3-index.
     /// @param[out] out_path A span to be filled with the path indexes.
     /// @return `error_t::none` on success, or `error_t::buffer_too_small`.

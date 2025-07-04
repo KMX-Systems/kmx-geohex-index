@@ -16,13 +16,13 @@ namespace kmx::gis::wgs84
 
 namespace kmx::geohex::cell::boundary
 {
-    /// @brief Maximum number of vertices a single H3 cell can have.
+    /// @brief Maximum number of vertices a single cell can have.
     constexpr std::uint8_t max_vertices = 10u;
 }
 
 namespace kmx::geohex
 {
-    /// @brief Represents a 64-bit H3 hexagonal grid system index.
+    /// @brief Represents a 64-bit hexagonal grid system index.
     class index
     {
     public:
@@ -43,7 +43,7 @@ namespace kmx::geohex
         constexpr index(index&&) noexcept = default;
 
         /// @brief Constructs an index from a raw 64-bit integer value.
-        /// @param item The raw H3 index value.
+        /// @param item The raw index value.
         explicit constexpr index(const value_t item) noexcept: value_ {item} {}
 
         /// @brief Copy assignment operator.
@@ -53,7 +53,7 @@ namespace kmx::geohex
         self& operator=(self&&) noexcept = default;
 
         /// @brief Assigns a raw 64-bit integer value to this index.
-        /// @param item The raw H3 index value to assign.
+        /// @param item The raw index value to assign.
         void operator=(const value_t item) noexcept { value_ = item; }
 
         // Value Access
@@ -63,7 +63,7 @@ namespace kmx::geohex
         [[nodiscard]] constexpr value_t value() const noexcept { return value_; }
 
         /// @brief Sets the raw 64-bit integer value of the index.
-        /// @param item The new raw H3 index value.
+        /// @param item The new raw index value.
         void set_value(const value_t item) noexcept { value_ = item; }
 
         /// @brief Function-call operator to get the raw value.
@@ -83,35 +83,35 @@ namespace kmx::geohex
 
         // Properties
 
-        /// @brief Validates the H3 index.
-        /// @return True if the index represents a valid H3 cell, false otherwise.
+        /// @brief Validates the index.
+        /// @return True if the index represents a valid cell, false otherwise.
         [[nodiscard]] bool is_valid() const noexcept;
 
-        /// @brief Checks if the H3 index is one of the 12 pentagons.
+        /// @brief Checks if the index is one of the 12 pentagons.
         /// @return True if the index corresponds to a pentagonal cell, false otherwise.
         [[nodiscard]] bool is_pentagon() const noexcept;
 
-        /// @brief Gets the mode of the H3 index.
-        /// @return The H3 index mode.
+        /// @brief Gets the mode of the index.
+        /// @return The index mode.
         [[nodiscard]] index_mode_t mode() const noexcept;
 
-        /// @brief Sets the mode of the H3 index.
-        /// @param item The new H3 index mode to set.
+        /// @brief Sets the mode of the index.
+        /// @param item The new index mode to set.
         void set_mode(const index_mode_t item) noexcept;
 
-        /// @brief Gets the resolution of the H3 index.
-        /// @return The H3 resolution (0-15).
+        /// @brief Gets the resolution of the index.
+        /// @return The resolution (0-15).
         [[nodiscard]] resolution_t resolution() const noexcept;
 
-        /// @brief Sets the resolution of the H3 index.
+        /// @brief Sets the resolution of the index.
         /// @param item The new resolution to set (0-15).
         void set_resolution(const resolution_t item) noexcept;
 
-        /// @brief Gets the base cell of the H3 index.
-        /// @return The H3 base cell (0-121).
+        /// @brief Gets the base cell of the index.
+        /// @return The base cell (0-121).
         [[nodiscard]] cell::base::id_t base_cell() const noexcept;
 
-        /// @brief Sets the base cell of the H3 index.
+        /// @brief Sets the base cell of the index.
         /// @param item The new base cell to set (0-121).
         void set_base_cell(const cell::base::id_t item) noexcept;
 
@@ -149,30 +149,30 @@ namespace kmx::geohex
 
         // Geographic Functions
 
-        /// @brief Calculates the area of this H3 cell in square kilometers.
+        /// @brief Calculates the area of this cell in square kilometers.
         /// @param[out] out_area The calculated area in km^2.
         /// @return error_t::none on success, or an error code.
         [[nodiscard]] error_t get_area_km2(double& out_area) const noexcept;
 
-        /// @brief Calculates the area of this H3 cell in square meters.
+        /// @brief Calculates the area of this cell in square meters.
         /// @param[out] out_area The calculated area in m^2.
         /// @return error_t::none on success, or an error code.
         [[nodiscard]] error_t get_area_m2(double& out_area) const noexcept;
 
-        /// @brief Gets the vertices that form the boundary of this H3 cell.
+        /// @brief Gets the vertices that form the boundary of this cell.
         /// @param[out] out A span to be filled with the boundary vertices.
         /// @return error_t::none on success, or an error code.
         [[nodiscard]] error_t get_boundary(std::span<wgs_coord>& out) const noexcept;
 
-        /// @brief Finds the center WGS84 coordinate of this H3 index.
+        /// @brief Finds the center WGS84 coordinate of this index.
         /// @param[out] out_coord The structure to fill with the center coordinate.
         /// @return error_t::none on success, or an error code if the index is invalid.
         [[nodiscard]] error_t to_wgs(wgs_coord& out_coord) const noexcept;
 
-        /// @brief Finds the H3 index of the cell containing a given WGS84 coordinate.
+        /// @brief Finds the index of the cell containing a given WGS84 coordinate.
         /// @param coord The WGS84 geographic coordinate.
-        /// @param res The target H3 resolution.
-        /// @return The H3 index. Returns an invalid index (value 0) on error.
+        /// @param res The target resolution.
+        /// @return The index. Returns an invalid index (value 0) on error.
         [[nodiscard]] static index from_wgs(const wgs_coord& coord, const resolution_t res) noexcept;
 
         // Hierarchy Functions
@@ -195,34 +195,34 @@ namespace kmx::geohex
 
         /// @brief Gets the parent of this cell at a coarser resolution.
         /// @param parent_resolution The desired parent resolution.
-        /// @return The parent H3 index. Returns an invalid index on error.
+        /// @return The parent index. Returns an invalid index on error.
         [[nodiscard]] index get_parent(const resolution_t parent_resolution) const noexcept;
 
-        /// @brief The maximum number of characters in the hexadecimal representation of an H3 index.
+        /// @brief The maximum number of characters in the hexadecimal representation of an index.
         /// @details A 64-bit integer requires at most 16 hex characters.
-        static constexpr std::uint8_t max_hex_string_length = 16;
+        static constexpr std::uint8_t max_hex_string_length = 16u;
 
         /// @brief The required buffer size for string conversion, including a null terminator.
         static constexpr std::uint8_t max_hex_string_buffer_size = max_hex_string_length + 1u;
 
-        /// @brief Converts an H3 index to its canonical hexadecimal string representation.
+        /// @brief Converts an index to its canonical hexadecimal string representation.
         /// @details This is a non-allocating function that uses `snprintf` for safe
         //           and efficient formatting. The caller must provide a buffer of
         //           sufficient size. The output span is resized to the actual number
         //           of characters written (excluding the null terminator).
         /// @ref h3ToString
-        /// @param idx The H3 index to convert.
+        /// @param idx The index to convert.
         /// @param[out] out_buffer A span of characters to write the result into.
         ///                        Must have a size of at least `max_hex_string_buffer_size`.
         /// @return `error_t::none` on success, or an error code.
         error_t to_string(index idx, std::span<char>& out_buffer) noexcept;
 
-        /// @brief Parses a hexadecimal string representation to create an H3 index.
+        /// @brief Parses a hexadecimal string representation to create an index.
         /// @details This is a non-allocating function that uses `std::from_chars`,
         ///          the C++17 standard for high-performance, locale-independent parsing.
         /// @ref stringToH3
-        /// @param str A string_view containing the hexadecimal representation of an H3 index.
-        /// @return The parsed H3 index. Returns an invalid index (value 0) if parsing fails.
+        /// @param str A string_view containing the hexadecimal representation of an index.
+        /// @return The parsed index. Returns an invalid index (value 0) if parsing fails.
         [[nodiscard]] index from_string(std::string_view str) noexcept;
 
     private:

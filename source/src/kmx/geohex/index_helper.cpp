@@ -283,7 +283,7 @@ namespace kmx::geohex
             return 0u; // Return invalid index
 
         // Step 2: Convert the internal FaceIJK representation into a final, canonical
-        // H3 index. This process determines the base cell and the sequence of digits
+        // index. This process determines the base cell and the sequence of digits
         // that define the path from the base cell to the target cell.
         index result_index;
         const error_t err_fijk_to_h3 = icosahedron::face::to_index(fijk, res, result_index);
@@ -327,7 +327,7 @@ namespace kmx::geohex
         }
 
         // 3. Core `cellToChildren` Algorithm
-        // This is a simplified representation of the H3 C algorithm's logic.
+        // This is a simplified representation of the C algorithm's logic.
         // A full implementation is highly complex and depends on the rest of the internal API.
 
         std::size_t children_written {};

@@ -8,12 +8,12 @@
 namespace kmx::geohex::cell::boundary
 {
     /// @brief Defines the sequence of neighbor directions to traverse to find cell vertices.
-    /// @details H3 uses a different vertex ordering for Class II (even) and Class III (odd)
+    /// @details uses a different vertex ordering for Class II (even) and Class III (odd)
     /// resolutions to maintain grid continuity. This table provides the correct sequence
     /// of single-step `ijk` direction vectors for both cases.
     ///
     /// The vertex directions are ordered to produce a clockwise polygon boundary.
-    /// @ref H3 C library constant `VERTEX_DIRECTIONS`.
+    /// @ref C library constant `VERTEX_DIRECTIONS`.
     static constexpr std::array<std::array<pseudo_ijk, direction_count - 1u>, 2u> vertex_directions = {
         {// Class II (even resolutions) vertex sequence.
          // Directions: J, IJ, I, IK, K, JK
@@ -32,7 +32,7 @@ namespace kmx::geohex::cell::boundary
     /// @ref _faceIjkToCellBoundary and _faceIjkPentToCellBoundary (H3 C internal)
     ///
     /// @param center_fijk The FaceIJK of the cell's center.
-    /// @param cell_index The H3 index of the cell (needed for resolution and pentagon status).
+    /// @param cell_index The index of the cell (needed for resolution and pentagon status).
     /// @param[out] out_vertices A span that will be filled with the boundary vertices.
     ///                        Its size will be adjusted to the number of vertices written.
     /// @return error_t::none on success, or an error code if the output span is too small.
@@ -100,11 +100,11 @@ namespace kmx::geohex::cell::boundary
     // It remains the same, acting as a high-level wrapper.
     error_t get(const index index, std::span<gis::wgs84::coordinate>& out) noexcept
     {
-        // 1. Validate the H3 cell index.
+        // 1. Validate the cell index.
         if (!index.is_valid())
             return error_t::cell_invalid;
 
-        // 2. Convert H3 cell index to its center FaceIJK representation.
+        // 2. Convert cell index to its center FaceIJK representation.
         icosahedron::face::ijk cell_center_fijk;
         const auto fijk_err = icosahedron::face::from_index(index, cell_center_fijk);
         if (fijk_err != error_t::none)

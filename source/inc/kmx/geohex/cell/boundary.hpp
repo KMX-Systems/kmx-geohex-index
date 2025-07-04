@@ -19,11 +19,11 @@ namespace kmx::geohex::icosahedron::face
 
 namespace kmx::geohex::cell::boundary
 {
-    /// @brief Gets the geographic boundary vertices of an H3 cell.
+    /// @brief Gets the geographic boundary vertices of an cell.
     /// @details This is the primary internal entry point for boundary calculation. It
-    ///          orchestrates the conversion of an H3 index to its internal `FaceIJK`
+    ///          orchestrates the conversion of an index to its internal `FaceIJK`
     ///          representation and then calls the core `get_vertices` worker function.
-    /// @param index The H3 cell index.
+    /// @param index The cell index.
     /// @param[out] out A span to be filled with the boundary vertices, ordered clockwise.
     ///                 The span must have a capacity of at least `cell::boundary::max_vertices` (10)
     ///                 to guarantee safety. On success, it will be resized to the actual
@@ -40,7 +40,7 @@ namespace kmx::geohex::cell::boundary
     ///          The resulting vertices form a clockwise polygon.
     /// @ref _faceIjkToCellBoundary and _faceIjkPentToCellBoundary (H3 C internal)
     /// @param center_fijk The FaceIJK of the cell's center.
-    /// @param cell_index The H3 index of the cell (needed for resolution and pentagon status).
+    /// @param cell_index The index of the cell (needed for resolution and pentagon status).
     /// @param[out] out_vertices A span that will be filled with the boundary vertices.
     ///                        Its size will be adjusted to the number of vertices written.
     /// @return `error_t::none` on success, or an error code if the output span is too small.
@@ -52,7 +52,7 @@ namespace kmx::geohex::cell::boundary
     ///          cell boundary when only one vertex's coordinates are needed. It is significantly
     ///          more efficient than calling `get_vertices` and selecting a single point.
     ///          It is used by `vertex::to_wgs` to achieve high performance.
-    /// @param cell_index The H3 index of the cell.
+    /// @param cell_index The index of the cell.
     /// @param vertex_num The vertex number to get (0-5, or 0-4 for pentagons).
     /// @param[out] out_vertex_fijk The structure to fill with the vertex's `FaceIJK` coordinates.
     ///                             The value is only valid if the function returns `error_t::none`.

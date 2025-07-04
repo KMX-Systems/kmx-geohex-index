@@ -11,16 +11,16 @@ namespace kmx::geohex::vertex
     /// @brief Gets the index of a specific vertex of a cell.
     /// @details This function is guaranteed not to throw exceptions.
     /// @ref cellToVertex
-    /// @param cell The H3 cell index.
+    /// @param cell The cell index.
     /// @param vertex_no The vertex number to get (0-5).
-    /// @return The H3 vertex index.
+    /// @return The vertex index.
     [[nodiscard]] index from_cell(const index cell, const vertex_no_t vertex_no) noexcept;
 
     /// @brief Gets all vertex indexes for a cell.
     /// @details This is a non-allocating function that is guaranteed not to throw exceptions.
     /// @ref cellToVertexes
-    /// @param cell The H3 cell index.
-    /// @param[out] out_vertices A span to be filled with the H3 vertex indexes. Its size must
+    /// @param cell The cell index.
+    /// @param[out] out_vertices A span to be filled with the vertex indexes. Its size must
     ///                        be at least 6. The span will be resized to the actual count.
     /// @return `error_t::none` on success.
     error_t from_cell(const index cell, std::span<index>& out_vertices) noexcept;
@@ -28,7 +28,7 @@ namespace kmx::geohex::vertex
     /// @brief Gets the geographic coordinate of a vertex index.
     /// @details This function is guaranteed not to throw exceptions.
     /// @ref vertexToGeo
-    /// @param vertex The H3 vertex index.
+    /// @param vertex The vertex index.
     /// @param[out] out_coord The structure to fill with the vertex coordinate.
     /// @return `error_t::none` on success.
     error_t to_wgs(const index vertex, gis::wgs84::coordinate& out_coord) noexcept;

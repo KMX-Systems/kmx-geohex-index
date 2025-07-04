@@ -1,7 +1,7 @@
 /// @file inc/kmx/geohex/cell/pentagon.hpp
 /// @ingroup Internal
-/// @brief Provides types, constants, and utilities for handling H3 pentagonal cells.
-/// @details The H3 grid is based on a spherical icosahedron, which requires 12 pentagons
+/// @brief Provides types, constants, and utilities for handling pentagonal cells.
+/// @details The grid is based on a spherical icosahedron, which requires 12 pentagons
 ///          (one at each icosahedron vertex) to tile the sphere. These pentagons have
 ///          distinct properties from hexagonal cells (e.g., only 5 neighbors, different
 ///          area, distorted child cells). This file provides the core internal tools
@@ -23,7 +23,7 @@ namespace kmx::geohex::cell::pentagon
     /// @brief A type alias for a pentagonal base cell identifier.
     using id_t = base::id_t;
 
-    /// @brief The total number of pentagons in the H3 grid system.
+    /// @brief The total number of pentagons in the grid system.
     /// @ref pentagonCount
     constexpr std::uint8_t count = 12u;
 
@@ -58,9 +58,9 @@ namespace kmx::geohex::cell::pentagon
         return item < base::count ? data[item] : false;
     }
 
-    /// @brief Fills a span with the H3 indexes of all 12 pentagons at a given resolution.
+    /// @brief Fills a span with the indexes of all 12 pentagons at a given resolution.
     /// @ref getPentagons
-    /// @param resolution The target H3 resolution.
+    /// @param resolution The target resolution.
     /// @param[out] out A span of exactly 12 `index` objects that will be filled with the
     ///               pentagon indexes for the specified resolution.
     void get(const resolution_t resolution, std::span<index, count> out) noexcept;
@@ -137,14 +137,14 @@ namespace kmx::geohex::cell::pentagon
     /// @brief A pair of clockwise rotational offsets associated with a pentagon's faces.
     /// @details This is part of the data required to handle coordinate system rotations when
     ///          traversing across icosahedron face boundaries near a pentagon.
-    /// @see H3 internal `pentagonCounterClockwiseOffsets`.
+    /// @see internal `pentagonCounterClockwiseOffsets`.
     using clockwise_offsets_t = std::pair<clockwise_offset_t, clockwise_offset_t>;
 
     /// @brief Retrieves the pre-calculated clockwise rotational offsets for a pentagon.
     /// @details When traversing from a pentagon base cell to an adjacent icosahedron face,
     ///          a specific rotational adjustment must be applied to the coordinate system.
     ///          This function provides these baked-in offsets.
-    /// @ref H3 internal `_pentagonCwOffset` logic.
+    /// @ref internal `_pentagonCwOffset` logic.
     /// @param base_cell_id The global ID of the pentagon base cell.
     /// @return A `clockwise_offsets_t` pair containing the rotational adjustments.
     ///         Returns a default-constructed (zeroed) pair if the input is not a pentagon.
