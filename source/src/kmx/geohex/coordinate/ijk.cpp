@@ -189,6 +189,15 @@ namespace kmx::geohex::coordinate
         j = -temp_i;
     }
 
+    [[nodiscard]] ijk ijk::rotated(const std::uint8_t rotations) const noexcept
+    {
+        ijk result = *this;
+        for (std::uint8_t i {}; i < rotations; ++i)
+            result.rotate_60ccw();
+
+        return result;
+    }
+
     int ijk::distance_to(const ijk& b) const noexcept
     {
         const ijk diff = *this - b;

@@ -124,6 +124,18 @@ namespace kmx::geohex::icosahedron::face
     /// @return The home `ijk` for that base cell.
     ijk home(const cell::base::id_t base_id) noexcept;
 
+    /// @brief Converts a cell index to its corresponding FaceIJK representation.
+    /// @details This is a fundamental conversion that "unpacks" an H3 index into the
+    ///          internal coordinate system used for most algorithms. This full implementation
+    ///          correctly handles coordinate system adjustments when the path from the base
+    ///          cell crosses icosahedron face boundaries.
+    /// @reference H3's `h3ToFaceIjk` and its internal traversal logic.
+    /// @param index The cell index to convert.
+    /// @param[out] out The structure to fill with the resulting `FaceIJK` representation.
+    ///                 This function calculates the final `face` and `ijk_coords`.
+    /// @return `error_t::none` on success, or an error code if the index is invalid.
+    error_t from(const index index, ijk& out) noexcept;
+
     /// @brief Represents a `FaceIJK` with an explicit orientation.
     /// @details This struct extends `ijk` to include the number of counter-clockwise
     ///          60-degree rotations applied to the IJK coordinate system. This is
@@ -193,6 +205,18 @@ namespace kmx::geohex::icosahedron::face
     /// @return An `std::optional` containing the neighbor `ijk` if the direction is valid
     ///         for a pentagon, `std::nullopt` otherwise.
     std::optional<ijk> get(const std::uint8_t pentagon_no, const direction_t direction) noexcept;
+
+    /// @brief Adjusts FaceIJK coordinates when a grid traversal from a HEXAGON crosses an icosahedron face boundary.
+    /// @details This function handles the simpler, non-distorted case of face overage. It finds the
+    ///          neighboring face and applies the correct pre-calculated rotation and translation
+    ///          to map the IJK coordinates into the new face's system.
+    /// @reference H3's `_adjustOverage` for hexagonal traversals.
+    /// @param[in] fijk The original FaceIJK with orientation, before the overage was detected.
+    /// @param res The resolution of the traversal.
+    /// @param digit The direction of movement that caused the overage.
+    /// @param[out] out_fijk The structure to fill with the resulting FaceIJK on the new face.
+    error_t adjust_hexagon_overage(const oriented_ijk& fijk, const resolution_t res, const direction_t digit,
+                                   oriented_ijk& out_fijk) noexcept;
 
     /// @brief Adjusts `FaceIJK` coordinates for pentagon distortion when crossing a face boundary.
     /// @details This is the core "worker" function containing the complex logic for transforming

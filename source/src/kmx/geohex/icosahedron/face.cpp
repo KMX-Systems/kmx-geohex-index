@@ -448,60 +448,78 @@ namespace kmx::geohex::icosahedron::face
         return {coordinate::ijk {unique_pseudo_ijk_array[item.index]}, item.face};
     }
 
-    /// @ref _h3ToFaceIjk (H3 C internal)
-    /// @brief Converts an cell index to its corresponding FaceIJK representation.
-    /// @param index The cell index.
-    /// @param out Output: The FaceIJK representation.
-    /// @return error_t::none on success, or an error code.
     error_t from(const index index, ijk& out) noexcept
     {
         if (!index.is_valid())
             return error_t::cell_invalid;
 
-        const auto base_cell = index.base_cell();
-        const auto res = index.resolution();
+        const cell::base::id_t base_cell_id = index.base_cell();
+        const resolution_t res = index.resolution();
 
-        // 1. Get the base cell's canonical orientation using direct lookups.
-        // This is far more efficient than a hash map.
-        oriented_ijk fijk_oriented;
-        fijk_oriented.face = of(base_cell);                                                  // from the existing `face_data` array
-        fijk_oriented.ijk_coords = {};                                                       // by definition
-        fijk_oriented.ccw_rotations_60 = cell::pentagon::clockwise_offsets(base_cell).first; // from the new array
+        // 1. Initialize the oriented FaceIJK at the base cell's home face.
+        //    The coordinates start at {0,0,0} on this face, and we determine the
+        //    initial rotation of the coordinate system.
+        oriented_ijk fijk_oriented {};
+        fijk_oriented.face = of(base_cell_id);
 
-        // 2. From res 1 up to the cell's resolution, apply child digits to descend the tree.
+        // Some base cells are themselves rotated 60 degrees CCW on their face.
+        // This is the starting orientation for the coordinate system.
+        if (cell::base::get_canonical_orientation(base_cell_id))
+            fijk_oriented.ccw_rotations_60 = 1;
+
+        // 2. Iteratively descend the hierarchy from resolution 1 to the target resolution.
         for (resolution_t r = resolution_t::r1; +r <= +res; r = static_cast<resolution_t>(+r + 1u))
         {
-            // Move to the center of the finer resolution grid.
-            auto& ijk_coords = fijk_oriented.ijk_coords;
+            // a. Get a reference to the coordinates for easier manipulation.
+            coordinate::ijk& ijk_coords = fijk_oriented.ijk_coords;
+
+            // b. Scale coordinates down to the next finer resolution's grid.
             if (is_class_3(r))
                 ijk_coords.down_ap7r();
             else
                 ijk_coords.down_ap7();
 
-            const auto digit = static_cast<direction_t>(index.digit(+r - 1));
+            // c. Get the direction digit for the current resolution.
+            const direction_t digit = static_cast<direction_t>(index.digit(+r - 1u));
 
-            // Rotate the child digit to match the base cell's orientation
-            auto rotated_digit_ijk = coordinate::to_ijk(digit);
-            for (std::int8_t i {}; i < fijk_oriented.ccw_rotations_60; ++i)
+            // d. Rotate the direction vector to match the current system's orientation.
+            coordinate::ijk rotated_digit_ijk = coordinate::to_ijk(digit);
+            for (std::int32_t i {}; i < fijk_oriented.ccw_rotations_60; ++i)
                 rotated_digit_ijk.rotate_60ccw();
 
-            // Apply child digit vector
-            fijk_oriented.ijk_coords += rotated_digit_ijk;
+            // e. Apply the rotated vector to move to the child cell's center.
+            ijk_coords += rotated_digit_ijk;
 
-            // For pentagons, we must also apply local rotations based on the direction taken.
-            if (cell::pentagon::check(base_cell))
+            // f. If the base cell is a pentagon, different rules apply.
+            if (cell::pentagon::check(base_cell_id))
             {
-                const auto& local_rots = cell::base::rotations_60ccw(base_cell);
+                // Apply additional pentagon-specific distortion rotations.
+                const auto& local_rots = cell::base::rotations_60ccw(base_cell_id);
                 for (std::int8_t i {}; i < local_rots[+digit]; ++i)
-                    fijk_oriented.ijk_coords.rotate_60ccw();
+                    ijk_coords.rotate_60ccw();
 
-                // TODO: A full implementation would call `adjust_overage` here if crossing face boundaries.
+                // Check for and correct any face-crossing ("overage"). This function
+                // will update the face, coordinates, and orientation in-place if needed.
+                const error_t overage_err = adjust_overage(fijk_oriented, r, digit);
+                if (overage_err != error_t::none)
+                {
+                    // A pentagon error means an invalid traversal out of a pentagon's
+                    // missing edge was attempted. This implies an invalid H3 index.
+                    if (overage_err == error_t::pentagon)
+                        return error_t::cell_invalid;
+
+                    return overage_err; // Another failure in adjustment logic.
+                }
             }
 
+            // g. Normalize the coordinates to ensure the i+j+k=0 invariant holds.
             ijk_coords.normalize();
         }
 
-        out = fijk_oriented; // Copy face and ijk_coords
+        // 3. The final result is the face and IJK coordinates after all steps.
+        out.face = fijk_oriented.face;
+        out.ijk_coords = fijk_oriented.ijk_coords;
+
         return error_t::none;
     }
 
@@ -540,7 +558,7 @@ namespace kmx::geohex::icosahedron::face
     /// @param face The starting face.
     /// @param vertex The index of the vertex on the starting face (0, 1, or 2).
     /// @return The ID of the neighboring face.
-    static id_t get_neighbor_face(const id_t face, const std::int8_t vertex) noexcept
+    static id_t get_neighbor_face(const id_t face, const std::uint8_t vertex) noexcept
     {
         return static_cast<id_t>(face_neighbors[+face][vertex]);
     }
@@ -568,16 +586,16 @@ namespace kmx::geohex::icosahedron::face
         out_fijk.ijk_coords = center_ijk_coords;
 
         std::array<id_t, count> face_queue;
-        int queue_pos = 0;
-        int queue_len = 1;
-        face_queue[0] = center_face;
+        std::uint8_t queue_pos {};
+        std::uint8_t queue_len = 1;
+        face_queue[0u] = center_face;
         std::array<bool, count> checked_faces {};
         checked_faces[+center_face] = true;
 
         while (queue_pos < queue_len)
         {
             const id_t current_face = face_queue[queue_pos++];
-            for (int i = 0; i < 3; ++i)
+            for (std::uint8_t i {}; i < 3u; ++i)
             {
                 id_t neighbor_face = get_neighbor_face(current_face, i);
                 if (checked_faces[+neighbor_face])
@@ -599,13 +617,14 @@ namespace kmx::geohex::icosahedron::face
                     min_dist_sq = dist_sq;
                     out_fijk.face = neighbor_face;
                     out_fijk.ijk_coords = neighbor_ijk_coords;
-                    queue_pos = 0;
+                    queue_pos = {};
                     queue_len = 1;
-                    face_queue[0] = out_fijk.face;
+                    face_queue[0u] = out_fijk.face;
                     checked_faces.fill(false);
                     checked_faces[+out_fijk.face] = true;
                     break;
                 }
+
                 if (queue_len < count)
                 {
                     face_queue[queue_len++] = neighbor_face;
@@ -619,10 +638,9 @@ namespace kmx::geohex::icosahedron::face
             coordinate::ijk temp_ijk = out_fijk.ijk_coords;
             temp_ijk.normalize();
             if (temp_ijk.leading_digit(res) == direction_t::ik_axes)
-            {
                 out_fijk.ijk_coords.rotate_60cw();
-            }
         }
+
         return error_t::none;
     }
 
@@ -1079,13 +1097,9 @@ namespace kmx::geohex::icosahedron::face
         return projection::to_ijk(uv, res_lower, out_ijk_lower_res);
     }
 
-    /// @brief Rotations to apply when moving from a pentagon to a neighboring face.
-    /// @details This is a port of `PENTAGON_ROTATIONS` from H3's `pentagon.c`.
-    static constexpr std::array<std::int8_t, cell::pentagon::count> pentagon_leading_digit_rotations = {1, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 2};
-
     /// @brief Standard face-to-face rotations for hexagon-to-hexagon overage.
     /// @details Port of `adjFaceRotations` from H3's `faceijk.c`.
-    static constexpr std::array<std::array<int, 3u>, count> adj_face_rotations = {
+    static constexpr std::array<std::array<std::uint8_t, 3u>, count> adj_face_rotations = {
         {{3, 0, 0}, {0, 0, 3}, {0, 3, 0}, {0, 0, 3}, {0, 3, 0}, {3, 0, 0}, {0, 0, 3}, {0, 3, 0}, {0, 0, 3}, {3, 0, 0},
          {3, 0, 0}, {0, 3, 0}, {3, 0, 0}, {0, 3, 0}, {0, 0, 3}, {0, 0, 3}, {3, 0, 0}, {0, 3, 0}, {3, 0, 0}, {0, 3, 0}}};
 
@@ -1125,50 +1139,88 @@ namespace kmx::geohex::icosahedron::face
         return -1; // Should not happen
     }
 
+    using crossed_edge_axes_t = std::pair<std::uint8_t, std::uint8_t>;
+
+    /// @brief Determines which of the 3 icosahedron face edges was crossed during a traversal.
+    /// @param ... (params) ...
+    /// @return An `std::optional` containing a `crossed_edge_axes_t` pair `{a_ax, b_ax}` if an
+    ///         overage was detected. Returns an empty optional (`{}`) otherwise.
+    [[nodiscard]] static std::optional<crossed_edge_axes_t> find_overage_axes(const coordinate::ijk& start_ijk,
+                                                                              const coordinate::ijk& move_vec,
+                                                                              const float_t max_coord) noexcept
+    {
+        const auto i_sum = start_ijk.i + move_vec.i;
+        if (i_sum > max_coord)
+            return crossed_edge_axes_t {1u, 2u}; // Use the named type
+        if (i_sum < -max_coord)
+            return crossed_edge_axes_t {2u, 1u};
+
+        const auto j_sum = start_ijk.j + move_vec.j;
+        if (j_sum > max_coord)
+            return crossed_edge_axes_t {2u, 0u};
+        if (j_sum < -max_coord)
+            return crossed_edge_axes_t {0u, 2u};
+
+        const auto k_sum = start_ijk.k + move_vec.k;
+        if (k_sum > max_coord)
+            return crossed_edge_axes_t {0u, 1u};
+        if (k_sum < -max_coord)
+            return crossed_edge_axes_t {1u, 0u};
+
+        return {};
+    }
+
     /// @brief Adjusts FaceIJK coordinates when a grid traversal from a HEXAGON crosses an icosahedron face boundary.
     /// @details This function handles the simpler, non-distorted case of face overage. It finds the
-    ///          neighboring base cell on the new face and calculates the required rotation to translate
-    ///          the IJK coordinates into the new face's system.
-    /// @note    This is a low-level helper, intended to be called by a higher-level neighbor-finding algorithm
-    ///          after it has detected an overage.
+    ///          neighboring face and applies the correct pre-calculated rotation and translation
+    ///          to map the IJK coordinates into the new face's system.
+    /// @reference H3's `_adjustOverage` for hexagonal traversals.
     /// @param[in] fijk The original FaceIJK with orientation, before the overage was detected.
     /// @param res The resolution of the traversal.
     /// @param digit The direction of movement that caused the overage.
-    /// @param[out] out_fijk The resulting FaceIJK on the new face.
-    static error_t adjust_hexagon_overage(const oriented_ijk& fijk, const resolution_t res, const direction_t digit,
-                                          oriented_ijk& out_fijk) noexcept
+    /// @param[out] out_fijk The structure to fill with the resulting FaceIJK on the new face.
+    error_t adjust_hexagon_overage(const oriented_ijk& fijk, const resolution_t res, const direction_t digit,
+                                   oriented_ijk& out_fijk) noexcept
     {
-        // 1. Determine the base cell of the original coordinates.
-        cell::base::id_t base_cell_id;
-        int orientation; // We need the base cell's rotation.
-        error_t err = to_base_cell_and_orientation(fijk, res, base_cell_id, orientation);
-        if (err != error_t::none)
-            return err;
-
         // This function must not be called for pentagons.
-        if (cell::pentagon::check(base_cell_id))
-            return error_t::pentagon; // Logic error: wrong function called.
+        if (cell::pentagon::check(to_base_cell(fijk, res)))
+            return error_t::pentagon;
 
-        // 2. Find the neighboring base cell in the direction of movement.
-        const cell::base::id_t new_base_cell_id = cell::base::neighbor_of(base_cell_id, digit);
-        if (new_base_cell_id == cell::base::invalid_index)
-            return error_t::failed; // Should not happen for a valid hexagon and direction.
+        const id_t start_face = fijk.face;
+        const coordinate::ijk& start_ijk = fijk.ijk_coords;
+        const coordinate::ijk& move_vec = coordinate::to_ijk(digit);
+        const float_t max_coord = static_cast<float_t>(3 * unsafe_ipow<std::int32_t>(7, +res));
 
-        // 3. Find the rotation adjustment required to move between these two base cells.
-        const auto& rotations = cell::base::rotations_60ccw(base_cell_id);
-        const int new_rotation = rotations[+digit];
+        // 1. Determine which of the 3 neighboring faces we are traversing to.
+        const std::optional<crossed_edge_axes_t> overage_axes = find_overage_axes(start_ijk, move_vec, max_coord);
+        if (!overage_axes.has_value())
+            // This case implies an internal logic error, as this function should only
+            // be called after an overage has already been detected.
+            return error_t::failed;
 
-        // 4. Create the new FaceIJK on the new face.
-        // The new face is the home face of the new base cell.
-        static_cast<ijk&>(out_fijk) = home(new_base_cell_id);
+        const auto [a_ax, b_ax] = *overage_axes;
+        const std::int8_t v0 = face_to_vertices[+start_face][a_ax];
+        const std::int8_t v1 = face_to_vertices[+start_face][b_ax];
 
-        // 5. The original coordinates need to be rotated into the new system.
-        out_fijk.ijk_coords = fijk.ijk_coords;
-        for (int i {}; i < new_rotation; ++i)
-            out_fijk.ijk_coords.rotate_60ccw();
+        // 2. Find the adjacent face and the necessary transformations from the lookup tables.
+        out_fijk.face = static_cast<id_t>(get_neighbor_face(start_face, a_ax));
+        const std::int32_t new_rotation = adj_face_rotations[+start_face][a_ax];
 
-        // 6. The overall system rotation also accumulates this change.
+        // 3. Transform the original coordinates into the new face's system.
+        const std::int8_t v2 = face_to_vertices[+out_fijk.face][find_vertex_on_face(out_fijk.face, v0)];
+        if (v1 != v2)
+            out_fijk.ijk_coords = start_ijk.rotated(new_rotation);
+        else
+            out_fijk.ijk_coords = start_ijk.rotated(new_rotation + 3);
+
+        coordinate::ijk offset_vec(adj_face_offsets[+start_face][a_ax]);
+        offset_vec.scale(max_coord * 2 + 1);
+        out_fijk.ijk_coords += offset_vec;
+        out_fijk.ijk_coords.normalize();
+
+        // 4. Update the overall system orientation for future steps.
         out_fijk.ccw_rotations_60 = (fijk.ccw_rotations_60 + new_rotation + 6) % 6;
+
         return error_t::none;
     }
 
@@ -1318,7 +1370,7 @@ namespace kmx::geohex::icosahedron::face
     {
         // A pentagon's local index must be in the range [0, 11].
         if (pentagon_no >= cell::pentagon::count)
-            return std::nullopt;
+            return {};
 
         const auto dir_val = +direction;
 

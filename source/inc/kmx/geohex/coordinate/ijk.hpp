@@ -188,6 +188,8 @@ namespace kmx::geohex::coordinate
         /// @ref _ijkRotate60cw
         void rotate_60cw() noexcept;
 
+        [[nodiscard]] ijk rotated(const std::uint8_t rotations) const noexcept;
+
         /// @brief Calculates the grid distance between two IJK coordinates.
         /// @details The hexagonal grid distance (number of cells to traverse) is half the
         ///          Manhattan distance of the cube coordinates.
