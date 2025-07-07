@@ -111,17 +111,17 @@ namespace kmx::geohex::grid
         }
 
         // Pre-calculate fractional steps for interpolation.
-        const double i_step = static_cast<double>(end_ijk.i) / dist;
-        const double j_step = static_cast<double>(end_ijk.j) / dist;
-        const double k_step = static_cast<double>(end_ijk.k) / dist;
+        const float_t i_step = static_cast<float_t>(end_ijk.i) / dist;
+        const float_t j_step = static_cast<float_t>(end_ijk.j) / dist;
+        const float_t k_step = static_cast<float_t>(end_ijk.k) / dist;
 
         std::size_t count {};
         for (int i {}; i <= dist; ++i)
         {
             // a. Interpolate to find the ideal fractional coordinate at this step.
-            const double i_frac = i_step * i;
-            const double j_frac = j_step * i;
-            const double k_frac = k_step * i;
+            const float_t i_frac = i_step * i;
+            const float_t j_frac = j_step * i;
+            const float_t k_frac = k_step * i;
 
             // b. Round the fractional coordinate to the nearest integer cube coordinate center.
             coordinate::ijk::value i_round, j_round, k_round;

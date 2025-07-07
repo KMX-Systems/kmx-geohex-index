@@ -176,7 +176,7 @@ namespace kmx::geohex::icosahedron::face
     }
 
     /// @ref faceCenterGeo
-    static constexpr std::array<std::array<double, 2u>, count> face_center_wgs {{
+    static constexpr std::array<std::array<float_t, 2u>, count> face_center_wgs {{
         {0.803582649718989942, 1.248397419617396099},   // face  0
         {1.307747883455638156, 2.536945009877921159},   // face  1
         {1.054751253523952054, -1.347517358900396623},  // face  2
@@ -561,8 +561,8 @@ namespace kmx::geohex::icosahedron::face
         if (projection::to_ijk(uv, res, center_ijk_coords) != error_t::none)
             return error_t::failed;
 
-        const auto center_v2d = coordinate::to_vec2<double>(center_ijk_coords);
-        double min_dist_sq = hex2d_distance_sq(uv, center_v2d);
+        const auto center_v2d = coordinate::to_vec2<float_t>(center_ijk_coords);
+        float_t min_dist_sq = hex2d_distance_sq(uv, center_v2d);
 
         out_fijk.face = center_face;
         out_fijk.ijk_coords = center_ijk_coords;
@@ -591,8 +591,8 @@ namespace kmx::geohex::icosahedron::face
                 coordinate::ijk neighbor_ijk_coords;
                 projection::to_ijk(neighbor_uv, res, neighbor_ijk_coords);
 
-                const auto neighbor_v2d = coordinate::to_vec2<double>(neighbor_ijk_coords);
-                const double dist_sq = hex2d_distance_sq(neighbor_uv, neighbor_v2d);
+                const auto neighbor_v2d = coordinate::to_vec2<float_t>(neighbor_ijk_coords);
+                const float_t dist_sq = hex2d_distance_sq(neighbor_uv, neighbor_v2d);
 
                 if (dist_sq < min_dist_sq)
                 {
@@ -751,7 +751,7 @@ namespace kmx::geohex::icosahedron::face
         return {};
     }
 
-    using radians_array_t = std::array<double, count>;
+    using radians_array_t = std::array<float_t, count>;
 
     /// @brief Icosahedron face ijk axes as azimuth in radians from face center to vertex 0.
     /// @ref faceAxesAzRadsCII

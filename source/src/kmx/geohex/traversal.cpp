@@ -182,16 +182,16 @@ namespace kmx::geohex
         icosahedron::face::oriented_ijk current_fijk = origin_fijk;
 
         // Pre-calculate interpolation steps for the traversal direction.
-        const double i_step = static_cast<double>(ijk.i) / dist;
-        const double j_step = static_cast<double>(ijk.j) / dist;
-        const double k_step = static_cast<double>(ijk.k) / dist;
+        const float_t i_step = static_cast<float_t>(ijk.i) / dist;
+        const float_t j_step = static_cast<float_t>(ijk.j) / dist;
+        const float_t k_step = static_cast<float_t>(ijk.k) / dist;
 
         for (int i = 1; i <= dist; ++i)
         {
             // Find the ideal intermediate point for this step.
-            const double i_frac = i_step * i;
-            const double j_frac = j_step * i;
-            const double k_frac = k_step * i;
+            const float_t i_frac = i_step * i;
+            const float_t j_frac = j_step * i;
+            const float_t k_frac = k_step * i;
 
             // Round it to find the next cell center on the line.
             coordinate::ijk::value i_round, j_round, k_round;

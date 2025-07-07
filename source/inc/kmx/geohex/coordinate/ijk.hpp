@@ -77,7 +77,7 @@ namespace kmx::geohex::coordinate
         /// @param j The floating-point 'j' component.
         /// @param k The floating-point 'k' component.
         /// @return The nearest valid integer `ijk` coordinate.
-        [[nodiscard]] static ijk from_cube_round(double i, double j, double k) noexcept;
+        [[nodiscard]] static ijk from_cube_round(float_t i, float_t j, float_t k) noexcept;
 
         /// @brief Calculates the 2D Cartesian coordinates of the hexagon's center.
         /// @details Projects the IJK grid coordinate onto a 2D plane for visualization or

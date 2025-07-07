@@ -19,14 +19,14 @@ namespace kmx::geohex::cell::area
     /// @ref cellAreaKm2
     ///
     /// @param cell The cell index for which to calculate the area.
-    /// @param[out] out A reference to a double that will be filled with the calculated area
+    /// @param[out] out A reference to a float_t that will be filled with the calculated area
     ///                 in square kilometers (km²). The value of this parameter is only
     ///                 valid if the function returns `error_t::none`.
     /// @return `error_t::none` on successful calculation.
     /// @return An error code, such as `error_t::cell_invalid`, if the input index is not
     ///         a valid cell.
     /// @see m2, rad2, index::get_area_km2
-    error_t km2(const index cell, double& out) noexcept;
+    error_t km2(const index cell, float_t& out) noexcept;
 
     /// @brief Calculates the area of an cell in square meters.
     /// @details This function computes the spherical area of a specific cell using its
@@ -40,14 +40,14 @@ namespace kmx::geohex::cell::area
     /// @ref cellAreaM2
     ///
     /// @param cell The cell index for which to calculate the area.
-    /// @param[out] out A reference to a double that will be filled with the calculated area
+    /// @param[out] out A reference to a float_t that will be filled with the calculated area
     ///                 in square meters (m²). The value of this parameter is only
     ///                 valid if the function returns `error_t::none`.
     /// @return `error_t::none` on successful calculation.
     /// @return An error code, such as `error_t::cell_invalid`, if the input index is not
     ///         a valid cell.
     /// @see km2, rad2, index::get_area_m2
-    error_t m2(const index cell, double& out) noexcept;
+    error_t m2(const index cell, float_t& out) noexcept;
 
     /// @brief Calculates the area of an cell in square radians.
     /// @details This function computes the fundamental spherical area of a specific cell
@@ -60,12 +60,12 @@ namespace kmx::geohex::cell::area
     /// @ref cellAreaRads2
     ///
     /// @param cell The cell index for which to calculate the area.
-    /// @param[out] out A reference to a double that will be filled with the calculated area
+    /// @param[out] out A reference to a float_t that will be filled with the calculated area
     ///                 in square radians (rad²). The value of this parameter is only
     ///                 valid if the function returns `error_t::none`.
     /// @return `error_t::none` on successful calculation.
     /// @return An error code, such as `error_t::cell_invalid`, if the input index is not
     ///         a valid cell.
     /// @see km2, m2
-    error_t rad2(const index cell, double& out) noexcept;
+    error_t rad2(const index cell, float_t& out) noexcept;
 }

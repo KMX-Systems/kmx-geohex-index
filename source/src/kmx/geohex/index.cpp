@@ -95,12 +95,12 @@ namespace kmx::geohex
 
     // Geographic Functions
 
-    error_t index::get_area_km2(double& out_area) const noexcept
+    error_t index::get_area_km2(float_t& out_area) const noexcept
     {
         return cell::area::km2(*this, out_area);
     }
 
-    error_t index::get_area_m2(double& out_area) const noexcept
+    error_t index::get_area_m2(float_t& out_area) const noexcept
     {
         return cell::area::m2(*this, out_area);
     }

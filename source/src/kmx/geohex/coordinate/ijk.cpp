@@ -7,10 +7,10 @@
 
 namespace kmx::geohex::coordinate
 {
-    ijk ijk::from_cube_round(const double i, const double j, const double k) noexcept
+    ijk ijk::from_cube_round(const float_t i, const float_t j, const float_t k) noexcept
     {
         value i_out, j_out, k_out;
-        cube_round<double, value>(i, j, k, i_out, j_out, k_out);
+        cube_round<float_t, value>(i, j, k, i_out, j_out, k_out);
         return {i_out, j_out, k_out};
     }
 
@@ -28,7 +28,7 @@ namespace kmx::geohex::coordinate
 
     vector2 ijk::center() const noexcept
     {
-        return to_vec2<double>(*this);
+        return to_vec2<float_t>(*this);
     }
 
     ijk ijk::operator+(const ijk& item) const noexcept
@@ -98,9 +98,9 @@ namespace kmx::geohex::coordinate
     void ijk::up_ap7() noexcept
     {
         // This is the fast algebraic simplification of the Class II parent-finding matrix transform.
-        const double i_prime = static_cast<double>(i);
-        const double j_prime = static_cast<double>(j);
-        const double k_prime = static_cast<double>(k);
+        const float_t i_prime = static_cast<float_t>(i);
+        const float_t j_prime = static_cast<float_t>(j);
+        const float_t k_prime = static_cast<float_t>(k);
         i = static_cast<value>(std::round((3.0 * i_prime - 1.0 * j_prime - 1.0 * k_prime) / 7.0));
         j = static_cast<value>(std::round((-1.0 * i_prime + 3.0 * j_prime - 1.0 * k_prime) / 7.0));
         k = static_cast<value>(std::round((-1.0 * i_prime - 1.0 * j_prime + 3.0 * k_prime) / 7.0));
@@ -110,9 +110,9 @@ namespace kmx::geohex::coordinate
     void ijk::up_ap7r() noexcept
     {
         // This is the fast algebraic simplification of the Class III parent-finding matrix transform.
-        const double i_prime = static_cast<double>(i);
-        const double j_prime = static_cast<double>(j);
-        const double k_prime = static_cast<double>(k);
+        const float_t i_prime = static_cast<float_t>(i);
+        const float_t j_prime = static_cast<float_t>(j);
+        const float_t k_prime = static_cast<float_t>(k);
         i = static_cast<value>(std::round((2.0 * i_prime + 1.0 * j_prime - 1.0 * k_prime) / 7.0));
         j = static_cast<value>(std::round((-1.0 * i_prime + 2.0 * j_prime + 1.0 * k_prime) / 7.0));
         k = static_cast<value>(std::round((1.0 * i_prime - 1.0 * j_prime + 2.0 * k_prime) / 7.0));

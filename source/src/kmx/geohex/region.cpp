@@ -27,7 +27,7 @@ namespace kmx::geohex::region
                 continue; // Point is not between the y-coordinates of the edge
 
             // Handle the antimeridian by checking the shortest longitude distance
-            double val =
+            float_t val =
                 (b.longitude - a.longitude) * (point.latitude - a.latitude) - (b.latitude - a.latitude) * (point.longitude - a.longitude);
 
             if (std::abs(b.longitude - a.longitude) > std::numbers::pi)
@@ -51,17 +51,17 @@ namespace kmx::geohex::region
             return 0u;
 
         // 1. Calculate the bounding box of the polygon.
-        double min_lat = std::numeric_limits<double>::max();
-        double max_lat = std::numeric_limits<double>::lowest();
-        double min_lon = std::numeric_limits<double>::max();
-        double max_lon = std::numeric_limits<double>::lowest();
+        float_t min_lat = std::numeric_limits<float_t>::max();
+        float_t max_lat = std::numeric_limits<float_t>::lowest();
+        float_t min_lon = std::numeric_limits<float_t>::max();
+        float_t max_lon = std::numeric_limits<float_t>::lowest();
 
         for (const auto& p: polygon)
         {
-            min_lat = std::min(min_lat, p.latitude);
-            max_lat = std::max(max_lat, p.latitude);
-            min_lon = std::min(min_lon, p.longitude);
-            max_lon = std::max(max_lon, p.longitude);
+            min_lat = std::min<float_t>(min_lat, p.latitude);
+            max_lat = std::max<float_t>(max_lat, p.latitude);
+            min_lon = std::min<float_t>(min_lon, p.longitude);
+            max_lon = std::max<float_t>(max_lon, p.longitude);
         }
 
         // 2. Get the corners of the bounding box.

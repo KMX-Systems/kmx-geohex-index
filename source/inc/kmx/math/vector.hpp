@@ -229,19 +229,19 @@ namespace kmx::math
         [[nodiscard]] constexpr T magnitude_sq() const noexcept { return x * x + y * y + z * z; }
 
         /// @brief Calculates the Euclidean norm (length or magnitude) of the vector.
-        [[nodiscard]] double magnitude() const noexcept
+        [[nodiscard]] float_t magnitude() const noexcept
         {
-            // Use double for intermediate calculations to prevent overflow and maintain precision.
-            const double dx = static_cast<double>(x);
-            const double dy = static_cast<double>(y);
-            const double dz = static_cast<double>(z);
+            // Use float_t for intermediate calculations to prevent overflow and maintain precision.
+            const float_t dx = static_cast<float_t>(x);
+            const float_t dy = static_cast<float_t>(y);
+            const float_t dz = static_cast<float_t>(z);
             return std::sqrt(dx * dx + dy * dy + dz * dz);
         }
 
         /// @brief Returns a normalized version of this vector (with a magnitude of 1).
         [[nodiscard]] vector3 normalized() const noexcept
         {
-            const double mag = magnitude();
+            const float_t mag = magnitude();
             if (mag > 1e-9)
             { // Use an epsilon to avoid division by zero for very small vectors
                 const auto inv_mag = static_cast<T>(1.0 / mag);

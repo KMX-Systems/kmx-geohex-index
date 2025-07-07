@@ -13,18 +13,18 @@ namespace kmx::math
     /// @brief Converts an angle from degrees to radians.
     /// @param degrees The angle in degrees.
     /// @return The equivalent angle in radians.
-    constexpr double degrees_to_radians(const double degrees) noexcept
+    constexpr float_t degrees_to_radians(const float_t degrees) noexcept
     {
-        constexpr double rads_per_degree = std::numbers::pi_v<double> / 180.0;
+        constexpr float_t rads_per_degree = std::numbers::pi_v<float_t> / 180.0;
         return degrees * rads_per_degree;
     }
 
     /// @brief Converts an angle from radians to degrees.
     /// @param radians The angle in radians.
     /// @return The equivalent angle in degrees.
-    constexpr double radians_to_degrees(const double radians) noexcept
+    constexpr float_t radians_to_degrees(const float_t radians) noexcept
     {
-        constexpr double degrees_per_rad = 180.0 / std::numbers::pi_v<double>;
+        constexpr float_t degrees_per_rad = 180.0 / std::numbers::pi_v<float_t>;
         return radians * degrees_per_rad;
     }
 }
@@ -34,7 +34,7 @@ namespace kmx::geohex
     /// @brief A pre-calculated constant for the square root of 3 divided by 2.
     /// @details This value (sin(60°)) is used frequently in hexagonal grid math to convert
     ///          axial/cube coordinates to Cartesian coordinates.
-    constexpr double sqrt3_2 = 0.8660254037844386467637231707529361834714;
+    constexpr float_t sqrt3_2 = 0.8660254037844386467637231707529361834714;
 
     /// @brief Rotates a direction 60 degrees counter-clockwise.
     /// @details This is a simple rotational transform on the 7 directions.
@@ -56,7 +56,7 @@ namespace kmx::geohex
     /// @ref H3's `UNIT_VEC_SCALES` constant array.
     /// @param resolution The resolution.
     /// @return The resolution-specific scaling factor.
-    double scaling_factor(const resolution_t resolution) noexcept;
+    float_t scaling_factor(const resolution_t resolution) noexcept;
 
     /// @brief Rounds floating-point cube coordinates to the nearest integer cube coordinate.
     /// @details This is a fundamental algorithm in for converting from a continuous
@@ -64,7 +64,7 @@ namespace kmx::geohex
     ///          to the nearest integer, then adjusts the component with the largest rounding
     ///          error to ensure the `i + j + k = 0` invariant is maintained.
     /// @ref H3's `_ijkRound` internal function.
-    /// @tparam _Float The floating-point type of the input coordinates (e.g., `double`).
+    /// @tparam _Float The floating-point type of the input coordinates (e.g., `float_t`).
     /// @tparam _Int The integer type for the output coordinates (e.g., `int`).
     /// @param i The floating-point 'i' component.
     /// @param j The floating-point 'j' component.
@@ -72,7 +72,7 @@ namespace kmx::geohex
     /// @param[out] i_out The resulting integer 'i' component.
     /// @param[out] j_out The resulting integer 'j' component.
     /// @param[out] k_out The resulting integer 'k' component.
-    template <typename _Float = double, typename _Int = int>
+    template <typename _Float = float_t, typename _Int = int>
     constexpr void cube_round(const _Float i, const _Float j, const _Float k, _Int& i_out, _Int& j_out, _Int& k_out) noexcept
     {
         _Int ri = std::round(i);

@@ -11,14 +11,14 @@ namespace kmx::geohex::projection
     void to_wgs(const math::vector3d& v3, gis::wgs84::coordinate& out_coord) noexcept
     {
         out_coord.latitude = std::asin(v3.z); // Latitude is arcsin(z)
-        constexpr auto epsilon = std::numeric_limits<double>::epsilon();
+        constexpr auto epsilon = std::numeric_limits<float_t>::epsilon();
         out_coord.longitude = (std::fabs(v3.x) < epsilon) && (std::fabs(v3.y) < epsilon) ? 0 : std::atan2(v3.y, v3.x);
     }
 
     /// @ref _geoToV3d (H3 C internal from algos.c)
     void to_v3d(const gis::wgs84::coordinate& geo_coord, math::vector3d& out_v3) noexcept
     {
-        const double r = std::cos(geo_coord.latitude);
+        const float_t r = std::cos(geo_coord.latitude);
         out_v3.x = std::cos(geo_coord.longitude) * r;
         out_v3.y = std::sin(geo_coord.longitude) * r;
         out_v3.z = std::sin(geo_coord.latitude);
@@ -29,7 +29,7 @@ namespace kmx::geohex::projection
     error_t to_v3d(const icosahedron::face::ijk& fijk_coords, resolution_t res, math::vector3d& out_v3) noexcept
     {
         // 1. Convert IJK to a 2D vector on the canonical hex grid.
-        math::vector2d v2d = coordinate::to_vec2<double>(fijk_coords.ijk_coords);
+        math::vector2d v2d = coordinate::to_vec2<float_t>(fijk_coords.ijk_coords);
 
         // 2. Scale by resolution-specific factor.
         v2d *= scaling_factor(res);
@@ -37,10 +37,10 @@ namespace kmx::geohex::projection
         // 3. Rotate for Class III (odd) resolutions.
         if (is_class_3(res))
         {
-            constexpr double angle_rad = std::numbers::pi_v<double> / 6.0; // 30 degrees CCW
-            const double cs = std::cos(angle_rad);
-            const double sn = std::sin(angle_rad);
-            const double old_x = v2d.x;
+            constexpr float_t angle_rad = std::numbers::pi_v<float_t> / 6.0; // 30 degrees CCW
+            const float_t cs = std::cos(angle_rad);
+            const float_t sn = std::sin(angle_rad);
+            const float_t old_x = v2d.x;
             v2d.x = old_x * cs - v2d.y * sn;
             v2d.y = old_x * sn + v2d.y * cs;
         }
@@ -72,22 +72,22 @@ namespace kmx::geohex::projection
         // Inverse Class III rotation
         if (is_class_3(res))
         {
-            constexpr auto angle_rad = -std::numbers::pi_v<double> / 6.0; // -30 degrees
-            double cs = std::cos(angle_rad);
-            double sn = std::sin(angle_rad);
-            double old_x = processed_uv.x;
+            constexpr auto angle_rad = -std::numbers::pi_v<float_t> / 6.0; // -30 degrees
+            float_t cs = std::cos(angle_rad);
+            float_t sn = std::sin(angle_rad);
+            float_t old_x = processed_uv.x;
             processed_uv.x = old_x * cs - processed_uv.y * sn;
             processed_uv.y = old_x * sn + processed_uv.y * cs;
         }
 
         // Inverse scaling
-        const double inv_scale_factor = 1.0 / scaling_factor(res);
+        const float_t inv_scale_factor = 1.0 / scaling_factor(res);
         processed_uv.x *= inv_scale_factor;
         processed_uv.y *= inv_scale_factor;
 
         // Convert hex 2D coordinates to axial cube coordinates
-        double j_axial = processed_uv.y / sqrt3_2;
-        double i_axial = processed_uv.x - 0.5 * j_axial;
+        float_t j_axial = processed_uv.y / sqrt3_2;
+        float_t i_axial = processed_uv.x - 0.5 * j_axial;
 
         // Round to integer cube coordinates
         coordinate::ijk::value i_int, j_int, k_int;

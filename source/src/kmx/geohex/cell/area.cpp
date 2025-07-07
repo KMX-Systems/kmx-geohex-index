@@ -9,34 +9,38 @@
 
 namespace kmx::geohex::cell::area
 {
-    constexpr double earth_radius_km = 6371.0088;
-    constexpr double meters_per_km = 1000.0;
+    constexpr float_t earth_radius_km = 6371.0088;
+    constexpr float_t meters_per_km = 1000.0;
 
-    error_t km2(const index cell, double& out) noexcept
+    error_t km2(const index cell, float_t& out) noexcept
     {
-        out = 0.0;
-        double area_rads2_val;
-        error_t err = rad2(cell, area_rads2_val);
-        if (err != error_t::none)
-            return err;
+        float_t area_rads2_val;
+        error_t error = rad2(cell, area_rads2_val);
+        if (error != error_t::none)
+        {
+            out = {};
+            return error;
+        }
 
         out = area_rads2_val * earth_radius_km * earth_radius_km;
         return error_t::none;
     }
 
-    error_t m2(const index cell, double& out) noexcept
+    error_t m2(const index cell, float_t& out) noexcept
     {
-        out = 0.0;
-        double area_rads2_val;
-        error_t err = rad2(cell, area_rads2_val);
-        if (err != error_t::none)
-            return err;
+        float_t area_rads2_val;
+        const error_t error = rad2(cell, area_rads2_val);
+        if (error != error_t::none)
+        {
+            out = {};
+            return error;
+        }
 
         out = area_rads2_val * (earth_radius_km * meters_per_km) * (earth_radius_km * meters_per_km);
         return error_t::none;
     }
 
-    error_t rad2(const index cell, double& out) noexcept
+    error_t rad2(const index cell, float_t& out) noexcept
     {
         std::array<gis::wgs84::coordinate, boundary::max_vertices> boundary_data;
         std::span<gis::wgs84::coordinate> boundary_data_span {boundary_data.begin(), boundary_data.end()};
@@ -48,7 +52,7 @@ namespace kmx::geohex::cell::area
         if (boundary_data_span.size() < 3u)
             return error_t::none; // Area is 0 for degenerate polygons
 
-        double area_sum {};
+        float_t area_sum {};
         for (std::uint8_t i {}; i < boundary_data_span.size(); ++i)
         {
             const auto& current_vert = boundary_data[i];

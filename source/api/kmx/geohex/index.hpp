@@ -152,12 +152,12 @@ namespace kmx::geohex
         /// @brief Calculates the area of this cell in square kilometers.
         /// @param[out] out_area The calculated area in km^2.
         /// @return error_t::none on success, or an error code.
-        [[nodiscard]] error_t get_area_km2(double& out_area) const noexcept;
+        [[nodiscard]] error_t get_area_km2(float_t& out_area) const noexcept;
 
         /// @brief Calculates the area of this cell in square meters.
         /// @param[out] out_area The calculated area in m^2.
         /// @return error_t::none on success, or an error code.
-        [[nodiscard]] error_t get_area_m2(double& out_area) const noexcept;
+        [[nodiscard]] error_t get_area_m2(float_t& out_area) const noexcept;
 
         /// @brief Gets the vertices that form the boundary of this cell.
         /// @param[out] out A span to be filled with the boundary vertices.

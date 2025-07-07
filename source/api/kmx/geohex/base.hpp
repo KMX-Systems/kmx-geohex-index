@@ -39,6 +39,7 @@ namespace kmx::geohex
     using digit_index = std::uint8_t;
     using digit_t = std::uint8_t;
     using vertex_no_t = std::uint8_t;
+    using float_t = double;
 
     /// @brief Defines the different index modes (cell, edge, vertex).
     enum class index_mode_t : std::uint8_t

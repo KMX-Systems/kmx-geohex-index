@@ -5,10 +5,10 @@
 
 namespace kmx::geohex
 {
-    double scaling_factor(const resolution_t resolution) noexcept
+    float_t scaling_factor(const resolution_t resolution) noexcept
     {
         /// @ref UNIT_VEC_SCALES
-        static constexpr std::array<double, resolution_count> data {
+        static constexpr std::array<float_t, resolution_count> data {
             0.36293838404446990, // res 0
             0.13714663375085900, // res 1
             0.05182828247323050, // res 2
