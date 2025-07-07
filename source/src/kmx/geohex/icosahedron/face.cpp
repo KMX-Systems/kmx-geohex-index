@@ -482,7 +482,7 @@ namespace kmx::geohex::icosahedron::face
 
             // Rotate the child digit to match the base cell's orientation
             auto rotated_digit_ijk = coordinate::to_ijk(digit);
-            for (int i = 0; i < fijk_oriented.ccw_rotations_60; ++i)
+            for (std::int8_t i {}; i < fijk_oriented.ccw_rotations_60; ++i)
                 rotated_digit_ijk.rotate_60ccw();
 
             // Apply child digit vector
@@ -492,7 +492,7 @@ namespace kmx::geohex::icosahedron::face
             if (cell::pentagon::check(base_cell))
             {
                 const auto& local_rots = cell::base::rotations_60ccw(base_cell);
-                for (int i = 0; i < local_rots[+digit]; ++i)
+                for (std::int8_t i {}; i < local_rots[+digit]; ++i)
                     fijk_oriented.ijk_coords.rotate_60ccw();
 
                 // TODO: A full implementation would call `adjust_overage` here if crossing face boundaries.
@@ -562,7 +562,7 @@ namespace kmx::geohex::icosahedron::face
             return error_t::failed;
 
         const auto center_v2d = coordinate::to_vec2<float_t>(center_ijk_coords);
-        float_t min_dist_sq = hex2d_distance_sq(uv, center_v2d);
+        float_t min_dist_sq = hex2d::distance_sq(uv, center_v2d);
 
         out_fijk.face = center_face;
         out_fijk.ijk_coords = center_ijk_coords;
@@ -592,7 +592,7 @@ namespace kmx::geohex::icosahedron::face
                 projection::to_ijk(neighbor_uv, res, neighbor_ijk_coords);
 
                 const auto neighbor_v2d = coordinate::to_vec2<float_t>(neighbor_ijk_coords);
-                const float_t dist_sq = hex2d_distance_sq(neighbor_uv, neighbor_v2d);
+                const float_t dist_sq = hex2d::distance_sq(neighbor_uv, neighbor_v2d);
 
                 if (dist_sq < min_dist_sq)
                 {

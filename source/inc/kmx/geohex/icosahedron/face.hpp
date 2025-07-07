@@ -12,14 +12,14 @@
     #include <optional>
 #endif
 
-namespace kmx::geohex
+namespace kmx::geohex::hex2d
 {
     /// @brief Calculates the squared Euclidean distance between two 2D hexagon centers.
     /// @details A performance-oriented utility that avoids a square root, suitable for
     ///          distance comparisons.
     /// @ref _hex2dDist
     template <typename T>
-    constexpr T hex2d_distance_sq(const math::vector2<T>& v1, const math::vector2<T>& v2) noexcept
+    constexpr T distance_sq(const math::vector2<T>& v1, const math::vector2<T>& v2) noexcept
     {
         const T dx = v1.x - v2.x;
         const T dy = v1.y - v2.y;
@@ -29,9 +29,9 @@ namespace kmx::geohex
     /// @brief Calculates the Euclidean distance between two 2D hexagon centers.
     /// @ref _hex2dDist
     template <typename T>
-    constexpr T hex2d_distance(const math::vector2<T>& v1, const math::vector2<T>& v2) noexcept
+    constexpr T distance(const math::vector2<T>& v1, const math::vector2<T>& v2) noexcept
     {
-        return std::sqrt(hex2d_distance_sq(v1, v2));
+        return std::sqrt(distance_sq(v1, v2));
     }
 }
 
