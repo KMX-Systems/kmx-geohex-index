@@ -18,6 +18,10 @@ namespace kmx::geohex::coordinate
     using vector2 = kmx::math::vector2d;
     using index_as_tuple = std::tuple<int, int, int>;
 
+    /// @brief A type alias for a tuple representing pseudo-IJK coordinates.
+    /// @details Used in lookup tables where full `ijk` class functionality is not needed.
+    using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
+
     /// @brief Represents hexagonal grid coordinates in the IJK cube coordinate system.
     /// @details In this system, `i + j + k = 0` always holds for valid coordinates.
     /// This property simplifies many grid algorithms like rotation and neighbor finding.
@@ -102,7 +106,7 @@ namespace kmx::geohex::coordinate
         constexpr bool operator==(const ijk&) const noexcept = default;
 
         /// @brief Checks if the IJK coordinates represent the grid origin {0, 0, 0}.
-        [[nodiscard]] constexpr bool is_origin() const noexcept { return i == 0 && j == 0 && k == 0; }
+        [[nodiscard]] constexpr bool is_origin() const noexcept { return (i == 0) && (j == 0) && (k == 0); }
 
         /// @brief In-place scales this IJK coordinate by an integer factor.
         /// @ref _ijkScale
@@ -159,22 +163,22 @@ namespace kmx::geohex::coordinate
         /// @brief Returns a copy of this coordinate moved to a finer resolution grid.
         /// @param is_class_3 `true` if the target child resolution is Class III (odd).
         /// @return A new `ijk` coordinate at the child's scale.
-        [[nodiscard]] ijk down_ap7(bool is_class_3) const noexcept;
+        [[nodiscard]] ijk down_ap7(const bool is_class_3) const noexcept;
 
         /// @brief Returns a copy of this coordinate moved to a coarser resolution grid.
         /// @param is_class_3 `true` if the current resolution is Class III (odd).
         /// @return A new `ijk` coordinate at the parent's scale.
-        [[nodiscard]] ijk up_ap7_copy(bool is_class_3) const noexcept;
+        [[nodiscard]] ijk up_ap7_copy(const bool is_class_3) const noexcept;
 
         /// @brief Moves this coordinate to a neighboring cell in a given direction.
         /// @ref _ijkNeighbor
         /// @param digit The direction to move.
-        void to_neighbor(direction_t digit) noexcept;
+        void to_neighbor(const direction_t digit) noexcept;
 
         /// @brief Returns the neighboring cell's coordinates in a given direction.
         /// @param digit The direction to move.
         /// @return A new `ijk` coordinate representing the neighbor.
-        [[nodiscard]] ijk neighbor(direction_t digit) const noexcept;
+        [[nodiscard]] ijk neighbor(const direction_t digit) const noexcept;
 
         /// @brief Rotates the coordinates 60 degrees counter-clockwise around the origin.
         /// @ref _ijkRotate60ccw
@@ -214,7 +218,7 @@ namespace kmx::geohex::coordinate
     constexpr ijk to_ijk(const direction_t direction) noexcept
     {
         // This table maps directions to their corresponding unit vectors in IJK space.
-        static constexpr std::array<ijk, direction_count> data {{
+        static constexpr std::array<pseudo_ijk, direction_count> data {{
             {0, 0, 0}, // 0: Center
             {0, 0, 1}, // 1: K
             {0, 1, 0}, // 2: J

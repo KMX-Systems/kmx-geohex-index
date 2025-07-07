@@ -279,13 +279,13 @@ namespace kmx::geohex::icosahedron::face
         projection::to_v3d(coord, v3d);
 
         id_t best_face = id_t::f0;
-        double max_dot = -2.0; // Dot products are in [-1, 1]
+        gis::wgs84::coordinate::value_t max_dot = -2.0; // Dot products are in [-1, 1]
 
         for (no_t i {}; i < count; ++i)
         {
             const auto face_id = static_cast<id_t>(i);
             const auto face_center = center_point(face_id);
-            const double dot = v3d.dot(face_center);
+            const auto dot = v3d.dot(face_center);
             if (dot > max_dot)
             {
                 max_dot = dot;
@@ -297,6 +297,8 @@ namespace kmx::geohex::icosahedron::face
     }
 
     static constexpr std::uint8_t unique_ijk_instances = 8u;
+
+    using pseudo_ijk = coordinate::pseudo_ijk;
 
     static constexpr std::array<pseudo_ijk, unique_ijk_instances> unique_pseudo_ijk_array {
         pseudo_ijk {0, 0, 0}, // Index 0

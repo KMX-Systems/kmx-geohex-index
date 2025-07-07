@@ -36,10 +36,6 @@ namespace kmx::geohex
     ///          axial/cube coordinates to Cartesian coordinates.
     constexpr double sqrt3_2 = 0.8660254037844386467637231707529361834714;
 
-    /// @brief A type alias for a tuple representing pseudo-IJK coordinates.
-    /// @details Used in lookup tables where full `ijk` class functionality is not needed.
-    using pseudo_ijk = std::tuple<std::int8_t, std::int8_t, std::int8_t>;
-
     /// @brief Rotates a direction 60 degrees counter-clockwise.
     /// @details This is a simple rotational transform on the 7 directions.
     ///          The `CENTER` direction remains unchanged.
