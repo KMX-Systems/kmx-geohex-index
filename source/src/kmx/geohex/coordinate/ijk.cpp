@@ -95,48 +95,59 @@ namespace kmx::geohex::coordinate
         return direction_t::invalid;
     }
 
-    void ijk::up_ap7() noexcept
+    void ijk::up_ap7_generic(const matrix_3x3_t& matrix) noexcept
     {
-        // This is the fast algebraic simplification of the Class II parent-finding matrix transform.
         const float_t i_prime = static_cast<float_t>(i);
         const float_t j_prime = static_cast<float_t>(j);
         const float_t k_prime = static_cast<float_t>(k);
-        i = static_cast<value>(std::round((3.0 * i_prime - 1.0 * j_prime - 1.0 * k_prime) / 7.0));
-        j = static_cast<value>(std::round((-1.0 * i_prime + 3.0 * j_prime - 1.0 * k_prime) / 7.0));
-        k = static_cast<value>(std::round((-1.0 * i_prime - 1.0 * j_prime + 3.0 * k_prime) / 7.0));
+
+        const float_t i_float = (matrix[0u][0u] * i_prime + matrix[0u][1u] * j_prime + matrix[0u][2u] * k_prime) / 7.0;
+        const float_t j_float = (matrix[1u][0u] * i_prime + matrix[1u][1u] * j_prime + matrix[1u][2u] * k_prime) / 7.0;
+        const float_t k_float = (matrix[2u][0u] * i_prime + matrix[2u][1u] * j_prime + matrix[2u][2u] * k_prime) / 7.0;
+
+        i = static_cast<value>(std::round(i_float));
+        j = static_cast<value>(std::round(j_float));
+        k = static_cast<value>(std::round(k_float));
+
         normalize();
+    }
+
+    void ijk::up_ap7() noexcept
+    {
+        // The transformation matrix for Class II (non-rotated) grids.
+        static constexpr matrix_3x3_t class_2_matrix {{{3.0, -1.0, -1.0}, {-1.0, 3.0, -1.0}, {-1.0, -1.0, 3.0}}};
+        up_ap7_generic(class_2_matrix);
     }
 
     void ijk::up_ap7r() noexcept
     {
-        // This is the fast algebraic simplification of the Class III parent-finding matrix transform.
-        const float_t i_prime = static_cast<float_t>(i);
-        const float_t j_prime = static_cast<float_t>(j);
-        const float_t k_prime = static_cast<float_t>(k);
-        i = static_cast<value>(std::round((2.0 * i_prime + 1.0 * j_prime - 1.0 * k_prime) / 7.0));
-        j = static_cast<value>(std::round((-1.0 * i_prime + 2.0 * j_prime + 1.0 * k_prime) / 7.0));
-        k = static_cast<value>(std::round((1.0 * i_prime - 1.0 * j_prime + 2.0 * k_prime) / 7.0));
-        normalize();
+        // The transformation matrix for Class III (rotated) grids.
+        static constexpr matrix_3x3_t class_3_matrix {{{2.0, 1.0, -1.0}, {-1.0, 2.0, 1.0}, {1.0, -1.0, 2.0}}};
+        up_ap7_generic(class_3_matrix);
+    }
+
+    void ijk::down_ap7_generic(const value sign) noexcept
+    {
+        // Store original values before modification
+        const value i_prime = i;
+        const value j_prime = j;
+        const value k_prime = k;
+
+        i = (2 * i_prime) + (sign * j_prime) - k_prime;
+        j = -i_prime + (2 * j_prime) + (sign * k_prime);
+        k = (sign * i_prime) - j_prime + (2 * k_prime);
     }
 
     void ijk::down_ap7() noexcept
     {
-        // Optimized replacement for the transform method, using the inverse matrix of up_ap7.
-        const value i_prime = i;
-        const value j_prime = j;
-        i = 2 * i_prime - j_prime - k;
-        j = -i_prime + 2 * j_prime - k;
-        k = -i_prime - j_prime + 2 * k;
+        // Class II (non-rotated) corresponds to a sign of -1 in the generic formula.
+        down_ap7_generic(-1);
     }
 
     void ijk::down_ap7r() noexcept
     {
-        // Optimized replacement for the transform method, using the inverse matrix of up_ap7r.
-        const value i_prime = i;
-        const value j_prime = j;
-        i = 2 * i_prime + j_prime - k;
-        j = -i_prime + 2 * j_prime + k;
-        k = i_prime - j_prime + 2 * k;
+        // Class III (rotated) corresponds to a sign of +1 in the generic formula.
+        down_ap7_generic(1);
     }
 
     ijk ijk::down_ap7(const bool is_class_3) const noexcept

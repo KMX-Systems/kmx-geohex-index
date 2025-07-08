@@ -209,6 +209,28 @@ namespace kmx::geohex::coordinate
 
         /// @brief The 'k' component of the cube coordinate.
         value k;
+
+    private:
+        /// @brief A type alias for a 3x3 matrix of floating-point coefficients.
+        using matrix_3x3_t = std::array<std::array<float_t, 3u>, 3u>;
+
+        /// @brief A generic, parameterized implementation for up-aperture-7 grid ascent.
+        /// @details This helper function unifies the logic for both Class II and Class III
+        ///          transformations by applying a provided transformation matrix.
+        /// @param matrix The 3x3 transformation matrix to apply.
+        void up_ap7_generic(const matrix_3x3_t& matrix) noexcept;
+
+        /// @brief A generic, parameterized implementation for down-aperture-7 grid descent.
+        /// @details This private helper function unifies the logic for both Class II (`down_ap7`)
+        ///          and Class III (`down_ap7r`) transformations. The two transformations follow
+        ///          an identical algebraic pattern, differing only by the signs of certain
+        ///          terms. This function captures that pattern and uses a `sign` parameter
+        ///          to select between the two. This refactoring eliminates code duplication
+        ///          while maintaining performance, as the function call will be inlined and
+        ///          the sign parameter will be constant-propagated by the compiler.
+        /// @param sign A sign multiplier. This must be `-1` for the Class II transformation
+        ///             or `+1` for the Class III transformation.
+        void down_ap7_generic(const value sign) noexcept;
     };
 
     /// @brief Creates a unit IJK vector for a given direction.
