@@ -16,12 +16,12 @@ namespace kmx::geohex::region
         int crossings {};
         for (std::size_t i {}; i < polygon.size(); ++i)
         {
-            const gis::wgs84::coordinate& p1 = polygon[i];
-            const gis::wgs84::coordinate& p2 = polygon[(i + 1u) % polygon.size()];
+            const auto& p1 = polygon[i];
+            const auto& p2 = polygon[(i + 1u) % polygon.size()];
 
             // Ensure p1 is the vertex with the smaller latitude
-            const gis::wgs84::coordinate& a = (p1.latitude < p2.latitude) ? p1 : p2;
-            const gis::wgs84::coordinate& b = (p1.latitude < p2.latitude) ? p2 : p1;
+            const auto& a = (p1.latitude < p2.latitude) ? p1 : p2;
+            const auto& b = (p1.latitude < p2.latitude) ? p2 : p1;
 
             if (point.latitude <= a.latitude || point.latitude > b.latitude)
                 continue; // Point is not between the y-coordinates of the edge
@@ -31,12 +31,11 @@ namespace kmx::geohex::region
                 (b.longitude - a.longitude) * (point.latitude - a.latitude) - (b.latitude - a.latitude) * (point.longitude - a.longitude);
 
             if (std::abs(b.longitude - a.longitude) > std::numbers::pi)
-            { // Edge crosses antimeridian
+                // Edge crosses antimeridian
                 val = (b.longitude > a.longitude) ? (b.longitude - a.longitude - 2 * std::numbers::pi) * (point.latitude - a.latitude) -
                                                         (b.latitude - a.latitude) * (point.longitude - a.longitude) :
                                                     (b.longitude - a.longitude + 2 * std::numbers::pi) * (point.latitude - a.latitude) -
                                                         (b.latitude - a.latitude) * (point.longitude - a.longitude);
-            }
 
             if (val > 0) // Point is to the left of the edge, counts as a crossing
                 ++crossings;
@@ -133,9 +132,7 @@ namespace kmx::geohex::region
                 std::vector<index> path_buffer(path_size);
                 std::span<index> path_span = path_buffer;
                 if (grid::path_cells(p1_idx, p2_idx, path_span) == error_t::none)
-                {
                     found_cells.insert(path_span.begin(), path_span.end());
-                }
             }
         }
 
@@ -146,31 +143,21 @@ namespace kmx::geohex::region
         bool seed_found {};
         std::array<index, 6u> neighbor_buffer;
 
+        gis::wgs84::coordinate center;
         for (const index boundary_cell: found_cells)
         {
             std::span<index> neighbor_span = neighbor_buffer;
             // This requires an internal `get_neighbors` function.
             if (get_neighbors(boundary_cell, neighbor_span) == error_t::none)
-            {
                 for (const index neighbor: neighbor_span)
-                {
                     // If this neighbor isn't part of the boundary itself...
-                    if (found_cells.find(neighbor) == found_cells.end())
+                    if ((found_cells.find(neighbor) == found_cells.end()) && (neighbor.to_wgs(center) == error_t::none) &&
+                        is_inside_polygon(center, polygon))
                     {
-                        gis::wgs84::coordinate center;
-                        if (neighbor.to_wgs(center) == error_t::none)
-                        {
-                            // ...and its center is inside the polygon, we have found our seed.
-                            if (is_inside_polygon(center, polygon))
-                            {
-                                seed_cell = neighbor;
-                                seed_found = true;
-                                break;
-                            }
-                        }
+                        seed_cell = neighbor;
+                        seed_found = true;
+                        break;
                     }
-                }
-            }
 
             if (seed_found)
                 break;
@@ -190,18 +177,15 @@ namespace kmx::geohex::region
 
                 std::span<index> neighbor_span = neighbor_buffer;
                 if (get_neighbors(current_cell, neighbor_span) == error_t::none)
-                {
                     for (const index neighbor: neighbor_span)
-                    {
                         if (found_cells.find(neighbor) == found_cells.end())
                         {
                             found_cells.insert(neighbor);
                             q.push(neighbor);
                         }
-                    }
-                }
             }
         }
+
         // If no seed was found, it means the polygon is too small to have an interior,
         // and the boundary trace is the complete result.
 
@@ -396,7 +380,6 @@ namespace kmx::geohex::region
 
         // 3. Ensure Sufficient Vector Capacity (The only `noexcept`-critical part)
         if (out_compacted.capacity() < required_total_capacity)
-        {
             // The vector's capacity is insufficient. We must try to reserve more.
             // This is the only operation that can throw std::bad_alloc.
             try
@@ -409,7 +392,6 @@ namespace kmx::geohex::region
                 // If allocation fails, we return a specific error code.
                 return error_t::memory_alloc;
             }
-        }
 
         // From this point forward, no more allocations will occur.
 
@@ -432,13 +414,11 @@ namespace kmx::geohex::region
 
         // 6. Finalize the Vector
         if (err == error_t::none)
-        {
             // The core function wrote the compacted result into the start of our buffer
             // and resized `output_span` to the exact final count.
             // We now set the vector's logical size to match what was written.
             // This operation does not reallocate memory because the capacity is sufficient.
             out_compacted.resize(output_span.size());
-        }
 
         // If an error occurred, the vector remains empty (from the `clear()` call),
         // which is a safe and predictable state.

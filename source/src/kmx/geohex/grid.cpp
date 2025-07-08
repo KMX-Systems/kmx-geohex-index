@@ -134,7 +134,7 @@ namespace kmx::geohex::grid
                 return error_t::failed;
 
             // d. Add to output, ensuring no duplicates (can happen due to rounding).
-            if ((count == 0) || (out_path[count - 1] != current_cell))
+            if ((count == 0) || (out_path[count - 1u] != current_cell))
                 out_path[count++] = current_cell;
         }
 
